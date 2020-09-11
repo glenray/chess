@@ -1,4 +1,5 @@
 import chess
+import chess.pgn
 from PIL import Image, ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -11,7 +12,13 @@ class GUI:
 		self.darkColorSq = "brown"
 		self.squares = []		# list of canvas ids for all canvas rectangles
 		self.buttonOptions = {"pady":5, "padx":5, "bd":4, "overrelief":'groove'}
+		# python chess board object
 		self.board = chess.Board()
+		# a dictonary of pillow image objects for each piece png file
+		self.pieceImg = {}
+		# a list of tkinter formatted and resized images generated from the png files
+		# They are stored here only to protect them from garbage collection.
+		self.pieceTkImg = []
 
 	def setup(self):
 		self.createWidgets()
@@ -19,10 +26,15 @@ class GUI:
 		self.positionSquares()
 		self.grabPieceImages()
 		self.setStartPos()
+		self.loadPgnFile('pgn/blind.pgn')
 		self.root.mainloop()
 
 	def setStartPos(self):
-		self.img = []
+		self.board.reset()
+		self.printCurrentBoard()
+
+	def printCurrentBoard(self):
+		self.pieceTkImg = []
 		self.canvas.update()
 		dim = int(round(self.canvas.winfo_width()/8))
 		# piece_map returns a dictionary where 
@@ -37,20 +49,19 @@ class GUI:
 	def putImage(self, piece, sqNum, dim):
 		row = int((63-sqNum)/8)
 		col = (63-sqNum)%8
-		im = self.pieceImages[piece]
+		im = self.pieceImg[piece]
 		im = im.resize((int(dim), int(dim)), Image.LANCZOS)
-		self.img.append(ImageTk.PhotoImage(image=im))
-		self.canvas.create_image((col*dim, row*dim), image=self.img[-1], anchor='nw')
+		self.pieceTkImg.append(ImageTk.PhotoImage(image=im))
+		self.canvas.create_image((col*dim, row*dim), image=self.pieceTkImg[-1], anchor='nw')
 
-	# create dictonary containing png images of pieces
+	# populate dictonary containing png images of pieces
 	def grabPieceImages(self):
 		# map internal piece abbreviations to png file names on disk
 		# The keys is the abbreviation: p=black pawn; P=white pawn, etc
 		# The values are the png image file names without the extension: eg bp.png
 		pieceNames = {'p':'bp', 'r':'br', 'n':'bn', 'b':'bb', 'q':'bq', 'k':'bk', 'P':'wp', 'R':'wr', 'N':'wn', 'B':'wb', 'Q':'wq', 'K':'wk'}
-		self.pieceImages = {}
 		for name in pieceNames:
-			self.pieceImages[name] = Image.open(f'img/png/{pieceNames[name]}.png')
+			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
 
 	def createWidgets(self):
 		# The window
@@ -79,7 +90,7 @@ class GUI:
 		self.buttonBarFrame.pack(anchor="n", fill='x', expand=1)
 
 		# Button
-		self.refreshButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="Refresh\nPieces", command=self.setStartPos)
+		self.refreshButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="New Game", command=self.setStartPos)
 		self.refreshButton.pack(anchor='nw')
 		
 		# Add widgets to paned window
@@ -109,6 +120,15 @@ class GUI:
 				sqIds+=1
 			ypos += sqSize
 			xpos = 0
+
+	def loadPgnFile(self, path):
+		pgn = open(path)
+		game = chess.pgn.read_game(pgn)
+		board = game.board()
+		for move in game.mainline_moves():
+			board.push(move)
+		self.board = board
+		self.printCurrentBoard()
 
 	''' Event bindings '''
 	# bound to change in board frame container size, redraw board based on width of container
