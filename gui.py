@@ -19,15 +19,20 @@ class GUI:
 		# a list of tkinter formatted and resized images generated from the png files
 		# They are stored here only to protect them from garbage collection.
 		self.pieceTkImg = []
+		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 
 	def setup(self):
 		self.createWidgets()
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
-		self.setStartPos()
-		self.loadPgnFile('pgn/blind.pgn')
+		self.loadGame('pgn/blind.pgn')
+		# self.setStartPos()
 		self.root.mainloop()
+
+	def loadGame(self, path):
+		self.board = self.loadPgnFile(path)
+		self.printCurrentBoard()
 
 	def setStartPos(self):
 		self.board.reset()
@@ -44,15 +49,15 @@ class GUI:
 		# home to the white light squared rook.
 		pm = self.board.piece_map()
 		for key in pm:
-			self.putImage(pm[key].symbol(), key, dim)
+			self.putImage(key, dim)
 
-	def putImage(self, piece, sqNum, dim):
-		row = int((63-sqNum)/8)
-		col = (63-sqNum)%8
-		im = self.pieceImg[piece]
+	def putImage(self, square, dim):
+		coords = self.canvas.coords(chess.square_name(square))
+		piece = self.board.piece_at(square) 
+		im = self.pieceImg[piece.symbol()]
 		im = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		self.pieceTkImg.append(ImageTk.PhotoImage(image=im))
-		self.canvas.create_image((col*dim, row*dim), image=self.pieceTkImg[-1], anchor='nw')
+		self.canvas.create_image((coords[0], coords[1]), image=self.pieceTkImg[-1], anchor='nw')
 
 	# populate dictonary containing png images of pieces
 	def grabPieceImages(self):
@@ -83,15 +88,19 @@ class GUI:
 		self.canvas.pack()
 
 		# Frame for control panel
-		self.controlFrame = tk.Frame(self.pWindow, bg="pink")
+		self.controlFrame = tk.Frame(self.pWindow, bg="gray")
 
 		# Button Bar Frame
 		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue", padx=5, pady=5)
 		self.buttonBarFrame.pack(anchor="n", fill='x', expand=1)
 
-		# Button
-		self.refreshButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="New Game", command=self.setStartPos)
-		self.refreshButton.pack(anchor='nw')
+		# New Game Button
+		self.newGameButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="New Game", command=self.setStartPos)
+		self.newGameButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+
+		# Reverse Board Button
+		self.reverseBoardButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="Reverse Board", command=self.reverseBoard)
+		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 		
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
@@ -99,42 +108,59 @@ class GUI:
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
+		rank = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
+		file = ('8', '7', '6', '5', '4', '3', '2', '1')
 		sqColor = (self.lightColorSq, self.darkColorSq)
 		for row in range(8):
 			for col in range(8):
+				sqName = rank[col]+str(file[row])
 				sqId = self.canvas.create_rectangle(
 					1,1,10,10, 
 					fill=sqColor[(col+row)%2],
-					tag='square'
+					tag=('square', sqName)
 				)
 				self.squares.append(sqId)
 
-	# re-position squares based on current value of self.boardSize
+	# position squares in canvas based on current square size
+	# can build board with either color on bottom depending on
+	# value of self.whiteSouth
 	def positionSquares(self):
-		xpos, ypos, sqIds, lblIds = 0, 0, 0, 0
 		sqSize = self.boardSize/8
+		sqIds = 0
+		# set variables based on what side is on bottom of board
+		if self.whiteSouth == True:
+			xpos = ypos = xreset = 0
+			direction = sqSize
+		else:
+			xpos = ypos = xreset = self.boardSize-sqSize
+			direction = -sqSize
 		for col in range(8):
 			for row in range(8):
 				self.canvas.coords(self.squares[sqIds], xpos, ypos, xpos+sqSize, ypos+sqSize)
-				xpos += sqSize
+				xpos += direction
 				sqIds+=1
-			ypos += sqSize
-			xpos = 0
+			ypos += direction
+			xpos = xreset
 
+	# returns a board object of game loaded from pgn file
 	def loadPgnFile(self, path):
 		pgn = open(path)
 		game = chess.pgn.read_game(pgn)
 		board = game.board()
 		for move in game.mainline_moves():
 			board.push(move)
-		self.board = board
-		self.printCurrentBoard()
+		return board
 
 	''' Event bindings '''
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
+
+	def reverseBoard(self, e=None):
+		self.whiteSouth = not self.whiteSouth
+		self.positionSquares()
+		self.printCurrentBoard()
 
 if __name__ == '__main__':
 	g=GUI()
