@@ -3,6 +3,8 @@ import chess.pgn
 from PIL import Image, ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import font
+
 from sqCanvas import sqCanvas
 
 class GUI:
@@ -11,7 +13,6 @@ class GUI:
 		self.lightColorSq = "yellow"
 		self.darkColorSq = "brown"
 		self.squares = []		# list of canvas ids for all canvas rectangles
-		self.buttonOptions = {"pady":5, "padx":5, "bd":4, "overrelief":'groove'}
 		# python chess board object
 		self.board = chess.Board()
 		# a dictonary of pillow image objects for each piece png file
@@ -75,6 +76,11 @@ class GUI:
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.geometry(f"{self.boardSize*2}x{self.boardSize*2}")
 
+		# Fonts and Styling
+		# print(font.families())	# prints available font families
+		buttonFont = font.Font(family="Tahoma", size=16)
+		buttonOptions = {"pady":5, "padx":5, "overrelief":'groove', "font":buttonFont}
+
 		# Paned Window
 		self.pWindow = ttk.PanedWindow(self.root, orient="horizontal")
 		self.pWindow.pack(fill="both", expand=1)
@@ -95,12 +101,13 @@ class GUI:
 		self.buttonBarFrame.pack(anchor="n", fill='x', expand=1)
 
 		# New Game Button
-		self.newGameButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="New Game", command=self.setStartPos)
+		self.newGameButton = tk.Button(self.buttonBarFrame, buttonOptions, text="New Game", command=self.setStartPos)
 		self.newGameButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# Reverse Board Button
-		self.reverseBoardButton = tk.Button(self.buttonBarFrame, self.buttonOptions, text="Reverse Board", command=self.reverseBoard)
+		self.reverseBoardButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Reverse Board", command=self.reverseBoard)
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+
 		
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
@@ -156,6 +163,7 @@ class GUI:
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
+		self.printCurrentBoard()
 
 	def reverseBoard(self, e=None):
 		self.whiteSouth = not self.whiteSouth
