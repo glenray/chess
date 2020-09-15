@@ -28,7 +28,7 @@ class GUI:
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
-		self.loadGame('pgn/blind.pgn')
+		self.loadGame('pgn/testA.pgn')
 		# self.setStartPos()
 		self.printCurrentBoard()
 		self.root.mainloop()
@@ -55,11 +55,12 @@ class GUI:
 	def putImage(self, square):
 		dim = int(round(self.canvas.winfo_width()/8))
 		coords = self.canvas.coords(chess.square_name(square))
-		piece = self.board.piece_at(square) 
+		piece = self.board.piece_at(square)
 		im = self.pieceImg[piece.symbol()]
 		im = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		self.pieceTkImg.append(ImageTk.PhotoImage(image=im))
-		self.canvas.create_image((coords[0], coords[1]), image=self.pieceTkImg[-1], anchor='nw', tag='piece')
+		i=self.canvas.create_image((coords[0], coords[1]), image=self.pieceTkImg[-1], anchor='nw', tag='piece')
+		print(len(self.pieceTkImg))
 
 	def deletePieceImage(self, sq):
 		piece = self.getPieceObj(sq)
@@ -187,6 +188,22 @@ class GUI:
 			self.board.push(previousMove)
 			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 			captureSquare, captureFunction = previousMove.to_square, self.deletePieceImage
+
+		print(
+			self.board.uci(previousMove)+'\n',
+			self.board
+		)
+
+		# Pawn promotion
+		lastChar = self.board.uci(previousMove)[-1]
+		if lastChar in ('q', 'b', 'n', 'r'):
+			if e.keysym == 'Left':
+				self.deletePieceImage(previousMove.from_square)
+				self.putImage(previousMove.from_square)
+			else:
+				self.deletePieceImage(previousMove.to_square)
+				self.putImage(previousMove.to_square)
+
 
 		# Moving backward in the move history, captured pieces need to reappear
 		# Moving foward, captured pieces need to be removed.
