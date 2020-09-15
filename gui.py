@@ -22,6 +22,10 @@ class GUI:
 		self.pieceTkImg = []
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		self.moveHistory = []	# populate with newer moves when going back in the move stack
+		# a dictionary where key is square name and values are
+		# {idx: canvas index of piece on square or None}
+		# {img: tk image of piece to prevent garbage collection or None}
+		self.pieceImgCache = {}
 
 	def setup(self):
 		self.createWidgets()
@@ -40,7 +44,6 @@ class GUI:
 		self.board.reset()
 
 	def printCurrentBoard(self):
-		self.pieceTkImg = []
 		self.canvas.update()
 		self.canvas.delete('piece')
 		# piece_map returns a dictionary where 
@@ -53,18 +56,22 @@ class GUI:
 			self.putImage(key)
 
 	def putImage(self, square):
+		print(f"Adding {self.board.piece_at(square)} to {chess.square_name(square)}")
+		sqName = chess.square_name(square)
 		dim = int(round(self.canvas.winfo_width()/8))
 		coords = self.canvas.coords(chess.square_name(square))
 		piece = self.board.piece_at(square)
 		im = self.pieceImg[piece.symbol()]
 		im = im.resize((int(dim), int(dim)), Image.LANCZOS)
-		self.pieceTkImg.append(ImageTk.PhotoImage(image=im))
-		i=self.canvas.create_image((coords[0], coords[1]), image=self.pieceTkImg[-1], anchor='nw', tag='piece')
-		print(len(self.pieceTkImg))
+		im = ImageTk.PhotoImage(image=im)
+		i=self.canvas.create_image((coords[0], coords[1]), image=im, anchor='nw', tag='piece')
+		self.pieceImgCache[sqName] = {'img':im, 'idx': i}
 
 	def deletePieceImage(self, sq):
-		piece = self.getPieceObj(sq)
+		print(f"Removing {self.board.piece_at(sq)} from {chess.square_name(sq)}")
+		piece = self.pieceImgCache[chess.square_name(sq)]['idx']
 		self.canvas.delete(piece)
+		del self.pieceImgCache[chess.square_name(sq)]
 
 	# populate dictonary containing png images of pieces
 	def grabPieceImages(self):
@@ -120,13 +127,10 @@ class GUI:
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
 
-	
-	'''
-	Return coordinates of a canvas rectangle object
-	@ sq obj a chess.square object
-	@ return a 4 element tuple containing the 
-	x,y locations of the upper left and lower right points of the square
-	'''
+	# Return coordinates of a canvas rectangle object
+	# @ sq obj a chess.square object
+	# @ return a 4 element tuple containing the 
+	# x,y locations of the upper left and lower right points of the square
 	def getSqCoords(self, sq):
 		sqName = chess.square_name(sq)
 		return self.canvas.coords(sqName)
@@ -148,14 +152,19 @@ class GUI:
 	@ toSq obj chess.square object to relocate piece
 	'''
 	def moveCanvasPiece(self, fromSq, toSq):
+		print(f"Moving {self.board.piece_at(fromSq)} from {chess.square_name(fromSq)} to {chess.square_name(toSq)}")
+		fromSqName = chess.square_name(fromSq)
+		toSqName = chess.square_name(toSq)
 		fromSqCoords = self.getSqCoords(fromSq)
-		toSqCoords = self.getSqCoords(toSq)
-		obj = self.getPieceObj(fromSq)
+		toSqCoords = self.getSqCoords(toSq)	
+		obj = self.pieceImgCache[chess.square_name(fromSq)]['idx']
 		# find the distance between the from and to coordinates
 		dx = toSqCoords[0]-fromSqCoords[0]
 		dy = toSqCoords[1]-fromSqCoords[1]
+		self.canvas.move(obj, dx, dy)
 
-		self.canvas.move(obj, dx, dy)		
+		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
+		self.pieceImgCache.pop(fromSqName)
 
 	def navMoveStack(self, e):
 		# moving back in game
@@ -185,9 +194,9 @@ class GUI:
 			isKingSideCastling = self.board.is_kingside_castling(previousMove)
 			isCaptureMove = self.board.is_capture(previousMove)
 			isEnPassant = self.board.is_en_passant(previousMove)
-			self.board.push(previousMove)
+			captureSquare, captureFunction = previousMove.from_square, self.deletePieceImage
 			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
-			captureSquare, captureFunction = previousMove.to_square, self.deletePieceImage
+			self.board.push(previousMove)
 
 		print(
 			self.board.uci(previousMove)+'\n',
@@ -201,15 +210,28 @@ class GUI:
 				self.deletePieceImage(previousMove.from_square)
 				self.putImage(previousMove.from_square)
 			else:
-				self.deletePieceImage(previousMove.to_square)
-				self.putImage(previousMove.to_square)
+				self.deletePieceImage(previousMove.from_square)
+				self.putImage(previousMove.from_square)
 
 
 		# Moving backward in the move history, captured pieces need to reappear
 		# Moving foward, captured pieces need to be removed.
 		# capture function is assigned based on which arrow key was pressed
 		if isCaptureMove:
-			captureFunction(captureSquare)
+			if isEnPassant:
+				print("En Passant")
+				if e.keysym == 'Left':
+					# restore taken pawn
+					file = chess.square_file(previousMove.to_square)
+					rank = chess.square_rank(previousMove.from_square)
+					self.putImage(chess.square(file,rank))
+				else:
+					# remove taken pawn
+					file = chess.square_file(previousMove.to_square)
+					rank = chess.square_rank(previousMove.from_square)
+					self.deletePieceImage(chess.square(file, rank))
+			else:
+				captureFunction(captureSquare)
 
 		# For castling, the king has already been moved above,
 		# but the rook still needs to be put where it belongs
@@ -225,11 +247,6 @@ class GUI:
 				self.moveCanvasPiece(fromSq, toSq) # uncastle rook
 			else:
 				self.moveCanvasPiece(toSq, fromSq) # castle rook
-
-
-		# For En Passant Capture
-		if isEnPassant:
-			print("En Passant")
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
