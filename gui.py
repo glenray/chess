@@ -15,13 +15,13 @@ class GUI:
 		self.squares = []		# list of canvas ids for all canvas rectangles
 		# python chess board object
 		self.board = chess.Board()
-		# a dictonary of pillow image objects for each piece png file
-		self.pieceImg = {}
 		# a list of tkinter formatted and resized images generated from the png files
 		# They are stored here only to protect them from garbage collection.
 		self.pieceTkImg = []
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		self.moveHistory = []	# populate with newer moves when going back in the move stack
+		# a dictonary of pillow image objects for each piece png file
+		self.pieceImg = {}
 		# a dictionary where key is square name and values are
 		# {idx: canvas index of piece on square or None}
 		# {img: tk image of piece to prevent garbage collection or None}
@@ -32,7 +32,7 @@ class GUI:
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
-		self.loadGame('pgn/testA.pgn')
+		self.loadGame('pgn/blind.pgn')
 		# self.setStartPos()
 		self.printCurrentBoard()
 		self.root.mainloop()
@@ -56,7 +56,6 @@ class GUI:
 			self.putImage(key)
 
 	def putImage(self, square):
-		print(f"Adding {self.board.piece_at(square)} to {chess.square_name(square)}")
 		sqName = chess.square_name(square)
 		dim = int(round(self.canvas.winfo_width()/8))
 		coords = self.canvas.coords(chess.square_name(square))
@@ -68,7 +67,6 @@ class GUI:
 		self.pieceImgCache[sqName] = {'img':im, 'idx': i}
 
 	def deletePieceImage(self, sq):
-		print(f"Removing {self.board.piece_at(sq)} from {chess.square_name(sq)}")
 		piece = self.pieceImgCache[chess.square_name(sq)]['idx']
 		self.canvas.delete(piece)
 		del self.pieceImgCache[chess.square_name(sq)]
@@ -88,8 +86,8 @@ class GUI:
 		self.root.title("Glen's Chess Analysis Wizard")
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.geometry(f"{self.boardSize*2}x{self.boardSize*2}")
-		self.root.bind('<Right>', self.navMoveStack)
-		self.root.bind('<Left>', self.navMoveStack)
+		self.root.bind('<Right>', self.moveForward)
+		self.root.bind('<Left>', self.moveBack)
 
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
@@ -136,27 +134,15 @@ class GUI:
 		return self.canvas.coords(sqName)
 
 	'''
-	Return canvas image object on a square
-	@ sq obj a chess.square object with a piece on it
-	return obj a canvas object image representing the piece
-	'''
-	def getPieceObj(self, sq):
-		sqCoords = self.getSqCoords(sq)
-		x = (sqCoords[0]+sqCoords[2])/2
-		y = (sqCoords[1]+sqCoords[3])/2
-		return self.canvas.find_closest(x, y)		
-
-	'''
 	Move a piece from on sq to another
 	@ fromSq obj chess.square object with piece on it
 	@ toSq obj chess.square object to relocate piece
 	'''
 	def moveCanvasPiece(self, fromSq, toSq):
-		print(f"Moving {self.board.piece_at(fromSq)} from {chess.square_name(fromSq)} to {chess.square_name(toSq)}")
 		fromSqName = chess.square_name(fromSq)
 		toSqName = chess.square_name(toSq)
 		fromSqCoords = self.getSqCoords(fromSq)
-		toSqCoords = self.getSqCoords(toSq)	
+		toSqCoords = self.getSqCoords(toSq)
 		obj = self.pieceImgCache[chess.square_name(fromSq)]['idx']
 		# find the distance between the from and to coordinates
 		dx = toSqCoords[0]-fromSqCoords[0]
@@ -166,75 +152,76 @@ class GUI:
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
 
-	def navMoveStack(self, e):
-		# moving back in game
-		if e.keysym == 'Left':
-			# quit if at first move
-			if len(self.board.move_stack) == 0 : return
-			previousMove = self.board.pop()
-			# These test must be done after the move is popped off the move stack
-			# See else clause explanation
-			isCaptureMove = self.board.is_capture(previousMove)
-			isCastling = self.board.is_castling(previousMove)
-			isKingSideCastling = self.board.is_kingside_castling(previousMove)
-			isEnPassant = self.board.is_en_passant(previousMove)
-			self.moveHistory.append(previousMove)
-			# moving backward, the move to square is the location of the piece and the from is where it needs to be returned to.
-			self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
-			captureSquare, captureFunction = previousMove.to_square, self.putImage
-		# moving forward in game
-		else:
-			# quit if at last move
-			if len(self.moveHistory) == 0 : return
-			previousMove = self.moveHistory.pop()
-			# These tests must be done before the move is pushed onto the board
-			# These test return true only for valid moves
-			# The moves are valid only before the board position is updated
-			isCastling = self.board.is_castling(previousMove)
-			isKingSideCastling = self.board.is_kingside_castling(previousMove)
-			isCaptureMove = self.board.is_capture(previousMove)
-			isEnPassant = self.board.is_en_passant(previousMove)
-			captureSquare, captureFunction = previousMove.from_square, self.deletePieceImage
-			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
-			self.board.push(previousMove)
-
-		print(
-			self.board.uci(previousMove)+'\n',
-			self.board
-		)
+	def moveBack(self, e):
+		if len(self.board.move_stack) == 0 : return
+		previousMove = self.board.pop()
+		isCaptureMove = self.board.is_capture(previousMove)
+		isCastling = self.board.is_castling(previousMove)
+		isKingSideCastling = self.board.is_kingside_castling(previousMove)
+		isEnPassant = self.board.is_en_passant(previousMove)
+		self.moveHistory.append(previousMove)
+		self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
+		
+		# moving backward, the move to square is the location of the piece and the from is where it needs to be returned to.
+		if isCaptureMove:
+			if isEnPassant:
+				print("En Passant")
+				# restore taken pawn
+				file = chess.square_file(previousMove.to_square)
+				rank = chess.square_rank(previousMove.from_square)
+				self.putImage(chess.square(file,rank))
+			else:
+				self.putImage(previousMove.to_square)
 
 		# Pawn promotion
 		lastChar = self.board.uci(previousMove)[-1]
 		if lastChar in ('q', 'b', 'n', 'r'):
-			if e.keysym == 'Left':
-				self.deletePieceImage(previousMove.from_square)
-				self.putImage(previousMove.from_square)
-			else:
-				self.deletePieceImage(previousMove.from_square)
-				self.putImage(previousMove.from_square)
+			self.deletePieceImage(previousMove.from_square)
+			self.putImage(previousMove.from_square)
 
+		if isCastling:
+			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
+			rank = chess.square_rank(rookToSq)
+			# set castled rook files depending which side of the board
+			fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
+			fromSq = chess.square(fromFile,rank)
+			toSq = chess.square(toFile,rank)
+			self.moveCanvasPiece(fromSq, toSq) # uncastle rook
+			
+		self.debugPrint(previousMove)
 
-		# Moving backward in the move history, captured pieces need to reappear
-		# Moving foward, captured pieces need to be removed.
-		# capture function is assigned based on which arrow key was pressed
+	def moveForward(self, e):
+		if len(self.moveHistory) == 0 : return
+		previousMove = self.moveHistory.pop()
+		# These tests must be done before the move is pushed onto the board
+		# These test return true only for valid moves
+		# The moves are valid only before the board position is updated
+		isCastling = self.board.is_castling(previousMove)
+		isKingSideCastling = self.board.is_kingside_castling(previousMove)
+		isCaptureMove = self.board.is_capture(previousMove)
+		isEnPassant = self.board.is_en_passant(previousMove)
+		captureSquare, captureFunction = previousMove.to_square, self.deletePieceImage
+		self.board.push(previousMove)
+		self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
+
+		# Pawn promotion
+		lastChar = self.board.uci(previousMove)[-1]
+		if lastChar in ('q', 'b', 'n', 'r'):
+			self.deletePieceImage(previousMove.to_square)
+			self.putImage(previousMove.to_square)
+
 		if isCaptureMove:
 			if isEnPassant:
 				print("En Passant")
-				if e.keysym == 'Left':
-					# restore taken pawn
-					file = chess.square_file(previousMove.to_square)
-					rank = chess.square_rank(previousMove.from_square)
-					self.putImage(chess.square(file,rank))
-				else:
-					# remove taken pawn
-					file = chess.square_file(previousMove.to_square)
-					rank = chess.square_rank(previousMove.from_square)
-					self.deletePieceImage(chess.square(file, rank))
-			else:
-				captureFunction(captureSquare)
+				# remove taken pawn
+				file = chess.square_file(previousMove.to_square)
+				rank = chess.square_rank(previousMove.from_square)
+				self.deletePieceImage(chess.square(file, rank))
+			# On forward move, the act of moving the from piece to the to location removes the to piece from the image cache although the canvas image object is still there, so we should delete it here, but am not sure how
+			# else:
+				# 	self.deletePieceImage(previousMove.from_square)
 
-		# For castling, the king has already been moved above,
-		# but the rook still needs to be put where it belongs
+
 		if isCastling:
 			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
 			rank = chess.square_rank(rookToSq)
@@ -243,10 +230,17 @@ class GUI:
 			fromSq = chess.square(fromFile,rank)
 			toSq = chess.square(toFile,rank)
 
-			if e.keysym == 'Left':
-				self.moveCanvasPiece(fromSq, toSq) # uncastle rook
-			else:
-				self.moveCanvasPiece(toSq, fromSq) # castle rook
+			self.moveCanvasPiece(toSq, fromSq) # castle rook
+
+		self.debugPrint(previousMove)
+
+	def debugPrint(self, prevMove):
+		print(
+			self.board.uci(prevMove)+'\n',
+			len(self.pieceImgCache),
+			len(self.canvas.find_all()),
+			'\n'+str(self.board)
+		)
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
