@@ -165,7 +165,6 @@ class GUI:
 		# moving backward, the move to square is the location of the piece and the from is where it needs to be returned to.
 		if isCaptureMove:
 			if isEnPassant:
-				print("En Passant")
 				# restore taken pawn
 				file = chess.square_file(previousMove.to_square)
 				rank = chess.square_rank(previousMove.from_square)
@@ -212,15 +211,13 @@ class GUI:
 
 		if isCaptureMove:
 			if isEnPassant:
-				print("En Passant")
 				# remove taken pawn
 				file = chess.square_file(previousMove.to_square)
 				rank = chess.square_rank(previousMove.from_square)
 				self.deletePieceImage(chess.square(file, rank))
 			# On forward move, the act of moving the from piece to the to location removes the to piece from the image cache although the canvas image object is still there, so we should delete it here, but am not sure how
 			# else:
-				# 	self.deletePieceImage(previousMove.from_square)
-
+				# self.deletePieceImage(previousMove.from_square)
 
 		if isCastling:
 			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
@@ -237,8 +234,6 @@ class GUI:
 	def debugPrint(self, prevMove):
 		print(
 			self.board.uci(prevMove)+'\n',
-			len(self.pieceImgCache),
-			len(self.canvas.find_all()),
 			'\n'+str(self.board)
 		)
 
