@@ -22,20 +22,31 @@ class GUI:
 		self.moveHistory = []	# populate with newer moves when going back in the move stack
 		# a dictonary of pillow image objects for each piece png file
 		self.pieceImg = {}
-		# a dictionary where key is square name and values are
-		# {idx: canvas index of piece on square or None}
-		# {img: tk image of piece to prevent garbage collection or None}
+		# a dictonary of tkImage objects for each piece resized for current board
+		self.tkPieceImg = {}
+		# a dictionary where key is square name and value is
+		# the canvas index corresponding to the piece on the square
 		self.pieceImgCache = {}
+		self.isButton1Pressed = False
 
 	def setup(self):
 		self.createWidgets()
 		self.createSquares()
 		self.positionSquares()
-		self.grabPieceImages()
 		self.loadGame('pgn/blind.pgn')
 		# self.setStartPos()
+		self.grabPieceImages(True)
 		self.printCurrentBoard()
+		# Why am I here?
+		self.root.bind('<ButtonPress-1>', self.toggleMouseButton)
+		self.root.bind('<ButtonRelease-1>', self.toggleMouseButton)
+		self.boardFrame.bind("<Configure>", self.resizeBoard)
+		self.canvas.update()
 		self.root.mainloop()
+
+	def toggleMouseButton(self, e):
+		self.isButton1Pressed = not self.isButton1Pressed
+		print(self.isButton1Pressed)
 
 	def loadGame(self, path):
 		self.board = self.loadPgnFile(path)
@@ -57,28 +68,34 @@ class GUI:
 
 	def putImage(self, square):
 		sqName = chess.square_name(square)
-		dim = int(round(self.canvas.winfo_width()/8))
-		coords = self.canvas.coords(chess.square_name(square))
+		# print(self.canvas.gettags(sqName))
+		coords = self.canvas.coords(sqName)
 		piece = self.board.piece_at(square)
-		im = self.pieceImg[piece.symbol()]
-		im = im.resize((int(dim), int(dim)), Image.LANCZOS)
-		im = ImageTk.PhotoImage(image=im)
-		i=self.canvas.create_image((coords[0], coords[1]), image=im, anchor='nw', tag='piece')
-		self.pieceImgCache[sqName] = {'img':im, 'idx': i}
+		pieceName = piece.symbol()
+		i=self.canvas.create_image((coords[0], coords[1]), image=self.tkPieceImg[pieceName], anchor='nw', tag='piece')
+		self.pieceImgCache[sqName] = i
 
 	def deletePieceImage(self, sq):
-		piece = self.pieceImgCache[chess.square_name(sq)]['idx']
-		self.canvas.delete(piece)
+		canvasIdx = self.pieceImgCache[chess.square_name(sq)]
+		self.canvas.delete(canvasIdx)
 		del self.pieceImgCache[chess.square_name(sq)]
 
 	# populate dictonary containing png images of pieces
-	def grabPieceImages(self):
+	def grabPieceImages(self, doFiles = False):
 		# map internal piece abbreviations to png file names on disk
 		# The keys is the abbreviation: p=black pawn; P=white pawn, etc
 		# The values are the png image file names without the extension: eg bp.png
 		pieceNames = {'p':'bp', 'r':'br', 'n':'bn', 'b':'bb', 'q':'bq', 'k':'bk', 'P':'wp', 'R':'wr', 'N':'wn', 'B':'wb', 'Q':'wq', 'K':'wk'}
 		for name in pieceNames:
-			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
+			if doFiles:
+				self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
+			self.tkPieceImg[name] = self.resizePieceImage(self.pieceImg[name])
+
+	def resizePieceImage(self, im):
+		self.canvas.update()
+		dim = int(round(self.canvas.winfo_width()/8))
+		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
+		return ImageTk.PhotoImage(image=img)
 
 	def createWidgets(self):
 		# The window
@@ -100,7 +117,7 @@ class GUI:
 
 		# Frame container for board canvas
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.boardFrame.bind("<Configure>", self.resizeBoard)
+		# self.boardFrame.bind("<Configure>", self.resizeBoard)
 
 		# Board Canvas
 		self.canvas = sqCanvas(self.boardFrame)
@@ -125,14 +142,6 @@ class GUI:
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
 
-	# Return coordinates of a canvas rectangle object
-	# @ sq obj a chess.square object
-	# @ return a 4 element tuple containing the 
-	# x,y locations of the upper left and lower right points of the square
-	def getSqCoords(self, sq):
-		sqName = chess.square_name(sq)
-		return self.canvas.coords(sqName)
-
 	'''
 	Move a piece from on sq to another
 	@ fromSq obj chess.square object with piece on it
@@ -141,9 +150,9 @@ class GUI:
 	def moveCanvasPiece(self, fromSq, toSq):
 		fromSqName = chess.square_name(fromSq)
 		toSqName = chess.square_name(toSq)
-		fromSqCoords = self.getSqCoords(fromSq)
-		toSqCoords = self.getSqCoords(toSq)
-		obj = self.pieceImgCache[chess.square_name(fromSq)]['idx']
+		fromSqCoords = self.canvas.coords(fromSqName)
+		toSqCoords = self.canvas.coords(toSqName)
+		obj = self.pieceImgCache[fromSqName]
 		# find the distance between the from and to coordinates
 		dx = toSqCoords[0]-fromSqCoords[0]
 		dy = toSqCoords[1]-fromSqCoords[1]
@@ -159,26 +168,24 @@ class GUI:
 		isCastling = self.board.is_castling(previousMove)
 		isKingSideCastling = self.board.is_kingside_castling(previousMove)
 		isEnPassant = self.board.is_en_passant(previousMove)
+		isPromotion = self.board.uci(previousMove)[-1] in ('q', 'b', 'n', 'r')
 		self.moveHistory.append(previousMove)
-		self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 		
 		# moving backward, the move to square is the location of the piece and the from is where it needs to be returned to.
 		if isCaptureMove:
 			if isEnPassant:
 				# restore taken pawn
+				self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 				file = chess.square_file(previousMove.to_square)
 				rank = chess.square_rank(previousMove.from_square)
 				self.putImage(chess.square(file,rank))
 			else:
+				print("Capture")
+				self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 				self.putImage(previousMove.to_square)
 
-		# Pawn promotion
-		lastChar = self.board.uci(previousMove)[-1]
-		if lastChar in ('q', 'b', 'n', 'r'):
-			self.deletePieceImage(previousMove.from_square)
-			self.putImage(previousMove.from_square)
-
-		if isCastling:
+		elif isCastling:
+			self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
 			rank = chess.square_rank(rookToSq)
 			# set castled rook files depending which side of the board
@@ -186,7 +193,15 @@ class GUI:
 			fromSq = chess.square(fromFile,rank)
 			toSq = chess.square(toFile,rank)
 			self.moveCanvasPiece(fromSq, toSq) # uncastle rook
-			
+		else:
+			self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
+
+		# Pawn promotion
+		if isPromotion:
+			self.moveCanvasPiece(fromSq, toSq) # uncastle rook
+			self.deletePieceImage(previousMove.from_square)
+			self.putImage(previousMove.from_square)
+
 		self.debugPrint(previousMove)
 
 	def moveForward(self, e):
@@ -201,7 +216,8 @@ class GUI:
 		isEnPassant = self.board.is_en_passant(previousMove)
 		captureSquare, captureFunction = previousMove.to_square, self.deletePieceImage
 		self.board.push(previousMove)
-		self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
+		if not isCaptureMove:
+			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 
 		# Pawn promotion
 		lastChar = self.board.uci(previousMove)[-1]
@@ -216,8 +232,9 @@ class GUI:
 				rank = chess.square_rank(previousMove.from_square)
 				self.deletePieceImage(chess.square(file, rank))
 			# On forward move, the act of moving the from piece to the to location removes the to piece from the image cache although the canvas image object is still there, so we should delete it here, but am not sure how
-			# else:
-				# self.deletePieceImage(previousMove.from_square)
+			else:
+				self.deletePieceImage(previousMove.to_square)
+				self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 
 		if isCastling:
 			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
@@ -233,8 +250,9 @@ class GUI:
 
 	def debugPrint(self, prevMove):
 		print(
-			self.board.uci(prevMove)+'\n',
-			'\n'+str(self.board)
+			self.board.uci(prevMove),
+			'\n'+str(self.board),
+			'\n',self.pieceImgCache
 		)
 
 	# create 64 rectangles to be sized and positioned later
@@ -285,9 +303,12 @@ class GUI:
 	''' Event bindings '''
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
+		self.canvas.update()
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
-		self.printCurrentBoard()
+		if self.isButton1Pressed == False:
+			self.grabPieceImages(False)
+			self.printCurrentBoard()
 
 	def reverseBoard(self):
 		self.whiteSouth = not self.whiteSouth
