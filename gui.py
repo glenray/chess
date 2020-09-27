@@ -31,10 +31,10 @@ class GUI:
 
 	def setup(self):
 		self.createWidgets()
-		self.canvas.update()
 		self.createSquares()
+		self.canvas.update()
 		self.positionSquares()
-		self.loadGame('pgn/testA.pgn')
+		self.loadGame('pgn/blind.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
@@ -179,7 +179,7 @@ class GUI:
 
 		elif isCastling:
 			self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
-			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
+			rookToSq = previousMove.to_square 
 			rank = chess.square_rank(rookToSq)
 			# set castled rook files depending which side of the board
 			fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
@@ -224,13 +224,13 @@ class GUI:
 				self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 
 		elif isCastling:
-			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
-			rank = chess.square_rank(rookToSq)
+			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
+			rank = chess.square_rank(previousMove.from_square)
 			# set castled rook files depending which side of the board
 			fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
 			fromSq = chess.square(fromFile,rank)
 			toSq = chess.square(toFile,rank)
-			self.moveCanvasPiece(fromSq, toSq) 
+			self.moveCanvasPiece(toSq, fromSq) 
 
 		else:
 			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
