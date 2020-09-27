@@ -191,7 +191,7 @@ class GUI:
 
 		# Pawn promotion
 		if isPromotion:
-			self.moveCanvasPiece(fromSq, toSq) # uncastle rook
+			# self.moveCanvasPiece(fromSq, toSq)
 			self.deletePieceImage(previousMove.from_square)
 			self.putImage(previousMove.from_square)
 
@@ -207,16 +207,9 @@ class GUI:
 		isKingSideCastling = self.board.is_kingside_castling(previousMove)
 		isCaptureMove = self.board.is_capture(previousMove)
 		isEnPassant = self.board.is_en_passant(previousMove)
+		isPromotion = self.board.uci(previousMove)[-1] in ('q', 'b', 'n', 'r')
 		captureSquare, captureFunction = previousMove.to_square, self.deletePieceImage
 		self.board.push(previousMove)
-		if not isCaptureMove:
-			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
-
-		# Pawn promotion
-		lastChar = self.board.uci(previousMove)[-1]
-		if lastChar in ('q', 'b', 'n', 'r'):
-			self.deletePieceImage(previousMove.to_square)
-			self.putImage(previousMove.to_square)
 
 		if isCaptureMove:
 			if isEnPassant:
@@ -224,20 +217,27 @@ class GUI:
 				file = chess.square_file(previousMove.to_square)
 				rank = chess.square_rank(previousMove.from_square)
 				self.deletePieceImage(chess.square(file, rank))
+				self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 			# On forward move, the act of moving the from piece to the to location removes the to piece from the image cache although the canvas image object is still there, so we should delete it here, but am not sure how
 			else:
 				self.deletePieceImage(previousMove.to_square)
 				self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
 
-		if isCastling:
+		elif isCastling:
 			rookToSq = previousMove.to_square if e.keysym == 'Left' else previousMove.from_square
 			rank = chess.square_rank(rookToSq)
 			# set castled rook files depending which side of the board
 			fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
 			fromSq = chess.square(fromFile,rank)
 			toSq = chess.square(toFile,rank)
+			self.moveCanvasPiece(fromSq, toSq) 
 
-			self.moveCanvasPiece(toSq, fromSq) # castle rook
+		else:
+			self.moveCanvasPiece(previousMove.from_square, previousMove.to_square)
+
+		if isPromotion:
+			self.deletePieceImage(previousMove.to_square)
+			self.putImage(previousMove.to_square)
 
 		self.debugPrint(previousMove)
 
