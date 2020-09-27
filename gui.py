@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
+import time
 
 from sqCanvas import sqCanvas
 
@@ -27,35 +28,26 @@ class GUI:
 		# a dictionary where key is square name and value is
 		# the canvas index corresponding to the piece on the square
 		self.pieceImgCache = {}
-		self.isButton1Pressed = False
 
 	def setup(self):
 		self.createWidgets()
+		self.canvas.update()
 		self.createSquares()
 		self.positionSquares()
 		self.loadGame('pgn/blind.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
-		# Why am I here?
-		self.root.bind('<ButtonPress-1>', self.toggleMouseButton)
-		self.root.bind('<ButtonRelease-1>', self.toggleMouseButton)
-		self.boardFrame.bind("<Configure>", self.resizeBoard)
-		self.canvas.update()
 		self.root.mainloop()
-
-	def toggleMouseButton(self, e):
-		self.isButton1Pressed = not self.isButton1Pressed
-		print(self.isButton1Pressed)
 
 	def loadGame(self, path):
 		self.board = self.loadPgnFile(path)
 
 	def setStartPos(self):
 		self.board.reset()
+		self.printCurrentBoard()
 
 	def printCurrentBoard(self):
-		self.canvas.update()
 		self.canvas.delete('piece')
 		# piece_map returns a dictionary where 
 		# key is the square number and value is a piece object
@@ -68,7 +60,6 @@ class GUI:
 
 	def putImage(self, square):
 		sqName = chess.square_name(square)
-		# print(self.canvas.gettags(sqName))
 		coords = self.canvas.coords(sqName)
 		piece = self.board.piece_at(square)
 		pieceName = piece.symbol()
@@ -92,7 +83,7 @@ class GUI:
 			self.tkPieceImg[name] = self.resizePieceImage(self.pieceImg[name])
 
 	def resizePieceImage(self, im):
-		self.canvas.update()
+		# self.canvas.update()
 		dim = int(round(self.canvas.winfo_width()/8))
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
@@ -106,6 +97,7 @@ class GUI:
 		self.root.bind('<Right>', self.moveForward)
 		self.root.bind('<Left>', self.moveBack)
 
+
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
 		buttonFont = font.Font(family="Tahoma", size=16)
@@ -117,10 +109,10 @@ class GUI:
 
 		# Frame container for board canvas
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		# self.boardFrame.bind("<Configure>", self.resizeBoard)
+		self.boardFrame.bind("<Configure>", self.resizeBoard)
 
 		# Board Canvas
-		self.canvas = sqCanvas(self.boardFrame)
+		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0)
 		self.canvas.pack()
 
 		# Frame for control panel
@@ -180,7 +172,6 @@ class GUI:
 				rank = chess.square_rank(previousMove.from_square)
 				self.putImage(chess.square(file,rank))
 			else:
-				print("Capture")
 				self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 				self.putImage(previousMove.to_square)
 
@@ -303,12 +294,11 @@ class GUI:
 	''' Event bindings '''
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
-		self.canvas.update()
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
-		if self.isButton1Pressed == False:
-			self.grabPieceImages(False)
-			self.printCurrentBoard()
+		self.canvas.delete('piece')
+		self.grabPieceImages(False)
+		self.printCurrentBoard()
 
 	def reverseBoard(self):
 		self.whiteSouth = not self.whiteSouth
