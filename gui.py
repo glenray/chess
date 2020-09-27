@@ -34,7 +34,7 @@ class GUI:
 		self.canvas.update()
 		self.createSquares()
 		self.positionSquares()
-		self.loadGame('pgn/blind.pgn')
+		self.loadGame('pgn/testA.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
@@ -171,6 +171,8 @@ class GUI:
 				file = chess.square_file(previousMove.to_square)
 				rank = chess.square_rank(previousMove.from_square)
 				self.putImage(chess.square(file,rank))
+				self.deletePieceImage(previousMove.from_square)
+				self.putImage(previousMove.from_square)
 			else:
 				self.moveCanvasPiece(previousMove.to_square, previousMove.from_square)
 				self.putImage(previousMove.to_square)
