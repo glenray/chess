@@ -32,7 +32,7 @@ class GUI:
 		self.createSquares()
 		self.canvas.update()
 		self.positionSquares()
-		self.loadGame('pgn/testA.pgn')
+		self.loadGame('pgn/testC.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
@@ -91,9 +91,8 @@ class GUI:
 		self.root.title("Glen's Chess Analysis Wizard")
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.geometry(f"{self.boardSize*2}x{self.boardSize*2}")
-		self.root.bind('<Right>', self.moveForward)
-		self.root.bind('<Left>', self.moveBack)
-
+		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
+		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
 
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
@@ -150,54 +149,40 @@ class GUI:
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
 
-	def moveBack(self, e):
-		if len(self.board.move_stack) == 0 : return
-		move = self.board.pop()
-		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-			isPromotion) = self.getMoveTests(move)
-		self.moveHistory.append(move)
-		# moving backward, the move to square is the location of the piece and the from is where it needs to be returned to.
+	def move(self, e, direction):
+		if direction == 'forward':
+			# quit if already at end of the game
+			if len(self.moveHistory) == 0 : return
+			move = self.moveHistory.pop()
+			# Moving forward in the move list, testing must be done before the move is 
+			# pushed onto the board.
+			# These test return true only for valid moves
+			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
+					isPromotion) = self.testMoveProperties(move)
+			self.board.push(move)
+		else:
+			# quite if already at beginning of the game
+			if len(self.board.move_stack) == 0 : return
+			move = self.board.pop()
+			# Moving back in move list, testing must be done after the move is
+			# popped back onto the board
+			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
+				isPromotion) = self.testMoveProperties(move)
+			self.moveHistory.append(move)
+
 		if isCaptureMove:
 			if isEnPassant:
-				self.enPassant(move, 'backward')
+				self.enPassant(move, direction)
 			else:
-				self.moveCanvasPiece(move.to_square, move.from_square)
-				self.putImage(move.to_square)
-
+				self.capturing(move, direction)
 		elif isCastling:
-			self.castling('backward', move, isKingSideCastling)
+			self.castling(move, direction, isKingSideCastling)
 		else:
-			self.moveCanvasPiece(move.to_square, move.from_square)
-		# Pawn promotion
+			self.movePiece(move, direction)	# this is a normal move
 		if isPromotion:
-			self.deletePieceImage(move.from_square)
-			self.putImage(move.from_square)
+			self.promotion(move, direction) # promotion can either be by capture or normal move
 
-
-	def moveForward(self, e):
-		if len(self.moveHistory) == 0 : return
-		move = self.moveHistory.pop()
-		# These tests must be done before the move is pushed onto the board
-		# These test return true only for valid moves
-		# The moves are valid only before the board position is updated
-		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-				isPromotion) = self.getMoveTests(move)
-		self.board.push(move)
-		if isCaptureMove:
-			if isEnPassant:
-				self.enPassant(move, "forward")
-			else:
-				self.deletePieceImage(move.to_square)
-				self.moveCanvasPiece(move.from_square, move.to_square)
-		elif isCastling:
-			self.castling('forward', move, isKingSideCastling)
-		else:
-			self.moveCanvasPiece(move.from_square, move.to_square)
-		if isPromotion:
-			self.deletePieceImage(move.to_square)
-			self.putImage(move.to_square)
-
-	def getMoveTests(self, move):
+	def testMoveProperties(self, move):
 		return (
 			self.board.is_castling(move),
 			self.board.is_kingside_castling(move),
@@ -206,7 +191,26 @@ class GUI:
 			self.board.uci(move)[-1] in ('q', 'b', 'n', 'r')		
 		)
 
-	def castling(self, direction, move, isKingSideCastling):
+	def movePiece(self, move, direction):
+		ts,fs = move.to_square, move.from_square
+		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
+		self.moveCanvasPiece(*sqs)
+
+	def promotion(self, move, direction):
+		targetSq = move.to_square if direction == 'forward' else move.from_square
+		self.deletePieceImage(targetSq)
+		self.putImage(targetSq)
+
+	def capturing(self, move, direction):
+		ts,fs = move.to_square, move.from_square
+		if direction == 'forward':
+			self.deletePieceImage(ts)
+			self.moveCanvasPiece(fs, ts)
+		else:
+			self.moveCanvasPiece(ts, fs)
+			self.putImage(ts)
+
+	def castling(self, move, direction, isKingSideCastling):
 		# locate rook rank and file (0 based)
 		fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
 		rank = chess.square_rank(move.to_square)
@@ -225,27 +229,25 @@ class GUI:
 	# @ direction str either 'forward' or 'backward', 
 	# 	depending on direction through move stack
 	def enPassant(self, move, direction):
-		file = chess.square_file(move.to_square)
-		rank = chess.square_rank(move.from_square)
-		if direction == "forward":
-			squares = (move.from_square, move.to_square)
-			func = self.deletePieceImage
-		else:
-			squares = (move.to_square, move.from_square)
-			func = self.putImage
+		ts,fs = move.to_square, move.from_square
+		# forward: delete the taken pawn
+		# backward: replace the taken pawn
+		squares,func = ((fs, ts), self.deletePieceImage) if direction == 'forward' else ((ts, fs), self.putImage)
 		# move capturing piece
 		self.moveCanvasPiece(*squares)
 		# delete captured pawn or return captured pawn to original square
+		file = chess.square_file(ts)
+		rank = chess.square_rank(fs)
 		func(chess.square(file, rank))
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
-		rank = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
-		file = ('8', '7', '6', '5', '4', '3', '2', '1')
+		file = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
+		rank = ('8', '7', '6', '5', '4', '3', '2', '1')
 		sqColor = (self.lightColorSq, self.darkColorSq)
 		for row in range(8):
 			for col in range(8):
-				sqName = rank[col]+str(file[row])
+				sqName = str(file[col])+rank[row]
 				sqId = self.canvas.create_rectangle(
 					1,1,10,10, 
 					fill=sqColor[(col+row)%2],
@@ -288,7 +290,6 @@ class GUI:
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
-		self.canvas.delete('piece')
 		self.grabPieceImages(False)
 		self.printCurrentBoard()
 
