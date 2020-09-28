@@ -32,7 +32,7 @@ class GUI:
 		self.createSquares()
 		self.canvas.update()
 		self.positionSquares()
-		self.loadGame('pgn/testC.pgn')
+		self.loadGame('pgn/deepblue2.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
@@ -305,3 +305,4 @@ class GUI:
 if __name__ == '__main__':
 	g=GUI()
 	g.setup()
+	
