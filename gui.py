@@ -149,39 +149,6 @@ class GUI:
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
 
-	def move(self, e, direction):
-		if direction == 'forward':
-			# quit if already at end of the game
-			if len(self.moveHistory) == 0 : return
-			move = self.moveHistory.pop()
-			# Moving forward in the move list, testing must be done before the move is 
-			# pushed onto the board.
-			# These test return true only for valid moves
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-					isPromotion) = self.testMoveProperties(move)
-			self.board.push(move)
-		else:
-			# quite if already at beginning of the game
-			if len(self.board.move_stack) == 0 : return
-			move = self.board.pop()
-			# Moving back in move list, testing must be done after the move is
-			# popped back onto the board
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-				isPromotion) = self.testMoveProperties(move)
-			self.moveHistory.append(move)
-
-		if isCaptureMove:
-			if isEnPassant:
-				self.enPassant(move, direction)
-			else:
-				self.capturing(move, direction)
-		elif isCastling:
-			self.castling(move, direction, isKingSideCastling)
-		else:
-			self.movePiece(move, direction)	# this is a normal move
-		if isPromotion:
-			self.promotion(move, direction) # promotion can either be by capture or normal move
-
 	def testMoveProperties(self, move):
 		return (
 			self.board.is_castling(move),
@@ -286,6 +253,41 @@ class GUI:
 		return board
 
 	''' Event bindings '''
+	# Updates GUI after moving though move stack in both directions
+	# bound to left and right arrow keys at root
+	def move(self, e, direction):
+		if direction == 'forward':
+			# quit if already at end of the game
+			if len(self.moveHistory) == 0 : return
+			move = self.moveHistory.pop()
+			# Moving forward in the move list, testing must be done before the move is 
+			# pushed onto the board.
+			# These test return true only for valid moves
+			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
+					isPromotion) = self.testMoveProperties(move)
+			self.board.push(move)
+		else:
+			# quite if already at beginning of the game
+			if len(self.board.move_stack) == 0 : return
+			move = self.board.pop()
+			# Moving back in move list, testing must be done after the move is
+			# popped back onto the board
+			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
+				isPromotion) = self.testMoveProperties(move)
+			self.moveHistory.append(move)
+
+		if isCaptureMove:
+			if isEnPassant:
+				self.enPassant(move, direction)
+			else:
+				self.capturing(move, direction)
+		elif isCastling:
+			self.castling(move, direction, isKingSideCastling)
+		else:
+			self.movePiece(move, direction)	# this is a normal move
+		if isPromotion:
+			self.promotion(move, direction) # promotion can either be by capture or normal move
+
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
@@ -293,6 +295,8 @@ class GUI:
 		self.grabPieceImages(False)
 		self.printCurrentBoard()
 
+	# toggles white on north or south side of the board
+	# bound to Reverse Button
 	def reverseBoard(self):
 		self.whiteSouth = not self.whiteSouth
 		self.positionSquares()
