@@ -3,9 +3,9 @@ import chess.pgn
 class pgnReader:
 	def __init__(self, pgnPath):
 		self.pgnPath = pgnPath
-		self.fileObj = open(self.pgnPath)
+		self.fileObj = open(self.pgnPath, encoding='utf8')
 
-	def getGameList(self, searchParams):
+	def getGameList(self, searchParams=None):
 		gameList = []
 		offsets = self.searchGames(searchParams)
 		for offset in offsets:
@@ -32,9 +32,12 @@ class pgnReader:
 			offset = self.fileObj.tell()
 			headers = chess.pgn.read_headers(self.fileObj)
 			if headers == None: break
-			for search in searchParams:
-				if self.isSubSet(headers, search):
-					offsets.append(offset)
+			if searchParams == None:
+				offsets.append(offset)
+			else:
+				for search in searchParams:
+					if self.isSubSet(headers, search):
+						offsets.append(offset)
 		return offsets			
 
 	# get game at offset
@@ -43,13 +46,18 @@ class pgnReader:
 		return chess.pgn.read_game(self.fileObj)
 
 	# Are all elements of subset in set?
-	def isSubSet(self, set, subset):
+	def isSubSet(self, headers, subset):
 		# value in subset must exactly equal set
 		# return all(set.get(key, None) == val for key, val in subset.items())
 		# value in subset must be somewhere in set
-		return all(val in set.get(key, None) for key, val in subset.items())
+		return all(val in headers.get(key) for key, val in subset.items())
 
 if __name__ == '__main__':
+	gamefile = [
+		'pgn/Kasparovs_Games.pgn',
+		'pgn/Adams.pgn',
+		'pgn/millionbase-rev.pgn'
+	]
 	dbWins = [
 		{'White' : 'Deep Blue', 'Result': '1-0'}, 
 		{'Black' : 'Deep Blue', 'Result': '0-1'}
@@ -61,12 +69,16 @@ if __name__ == '__main__':
 		{'White':'Deep Blue'},
 		{'Black':'Deep Blue'}
 	]
-	karpov = [
+	tal = [
 		{'White':'Tal'},
 		{'Black':'Tal'}
 	]
-	reader = pgnReader('pgn/Kasparovs_Games.pgn')
-	games = reader.getGameList(dbWhiteTies)
+	linares = [
+		{'Site':'Spain'},
+		{'Site':'Linares'}
+	]
+	reader = pgnReader(gamefile[2])
+	games = reader.getGameList(tal)
 	for game in games:
 		print(f"{game.headers['Site']} {game.headers['White']} v. {game.headers['Black']} {game.headers['Result']}")
 	print(len(games))

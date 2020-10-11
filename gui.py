@@ -32,7 +32,7 @@ class GUI:
 		self.createSquares()
 		self.canvas.update()
 		self.positionSquares()
-		self.loadGame('pgn/deepblue2.pgn')
+		self.loadGame('pgn/blind-warrior vs AnwarQ.pgn')
 		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
