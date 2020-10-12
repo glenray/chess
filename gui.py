@@ -26,20 +26,20 @@ class GUI:
 		# a dictionary where key is square name and value is
 		# the canvas index corresponding to the piece on the square
 		self.pieceImgCache = {}
+		# List of moves in short algebreic notation
+		self.moveList = []
 
 	def setup(self):
+		self.board = self.loadPgnFile('pgn/blind-warrior vs AnwarQ.pgn')
+		# self.setStartPos()
 		self.createWidgets()
 		self.createSquares()
 		self.canvas.update()
 		self.positionSquares()
-		self.loadGame('pgn/blind-warrior vs AnwarQ.pgn')
-		# self.setStartPos()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
+		self.populateGameScore()
 		self.root.mainloop()
-
-	def loadGame(self, path):
-		self.board = self.loadPgnFile(path)
 
 	def setStartPos(self):
 		self.board.reset()
@@ -112,11 +112,11 @@ class GUI:
 		self.canvas.pack()
 
 		# Frame for control panel
-		self.controlFrame = tk.Frame(self.pWindow, bg="gray")
+		self.controlFrame = tk.Frame(self.pWindow, bg="green")
 
 		# Button Bar Frame
 		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue", padx=5, pady=5)
-		self.buttonBarFrame.pack(anchor="n", fill='x', expand=1)
+		self.buttonBarFrame.pack(anchor='n', fill='x')
 
 		# New Game Button
 		self.newGameButton = tk.Button(self.buttonBarFrame, buttonOptions, text="New Game", command=self.setStartPos)
@@ -125,10 +125,27 @@ class GUI:
 		# Reverse Board Button
 		self.reverseBoardButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Reverse Board", command=self.reverseBoard)
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
-		
+
+		# game score
+		self.gameScore = ttk.Treeview(self.controlFrame)
+		self.gameScore['show'] = ['headings']
+		self.gameScore['columns'] = ("White", "Black")
+		self.gameScore.column("White", width=100)
+		self.gameScore.column("Black", width=100)
+		self.gameScore.heading("White", text="White")
+		self.gameScore.heading("Black", text="Black")
+		self.gameScore.pack(anchor='n', expand=True, fill='both')
+
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
+
+	def populateGameScore(self):
+		length = len(self.moveList)
+		for x in range(0, length-1, 2):
+			blackMv = self.moveList[x+1] if x<length-1 else ''
+			self.gameScore.insert("", 'end', text='', values=(self.moveList[x], blackMv))
+
 
 	'''
 	Move a piece from on sq to another
@@ -249,6 +266,7 @@ class GUI:
 		game = chess.pgn.read_game(pgn)
 		board = game.board()
 		for move in game.mainline_moves():
+			self.moveList.append(board.san(move))
 			board.push(move)
 		return board
 
@@ -305,4 +323,3 @@ class GUI:
 if __name__ == '__main__':
 	g=GUI()
 	g.setup()
-	
