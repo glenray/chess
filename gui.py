@@ -127,25 +127,31 @@ class GUI:
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# game score
-		self.gameScore = ttk.Treeview(self.controlFrame)
-		self.gameScore['show'] = ['headings']
-		self.gameScore['columns'] = ("White", "Black")
-		self.gameScore.column("White", width=100)
-		self.gameScore.column("Black", width=100)
-		self.gameScore.heading("White", text="White")
-		self.gameScore.heading("Black", text="Black")
+		self.gameScore = tk.Text(self.controlFrame, width=10, font=("helvetica", 16))
+		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
+		self.gameScore.tag_bind('move', '<Button-1>', self.test)
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
 
-	def populateGameScore(self):
-		length = len(self.moveList)
-		for x in range(0, length-1, 2):
-			blackMv = self.moveList[x+1] if x<length-1 else ''
-			self.gameScore.insert("", 'end', text='', values=(self.moveList[x], blackMv))
+	def test(self, e):
+		location = f"@{e.x},{e.y}+1 chars"
+		text = self.gameScore.tag_prevrange('move', location)
+		print(self.gameScore.get(text[0], text[1]))
 
+	def populateGameScore(self):
+		self.gameScore.config(state='normal')
+		text = ''
+		length = len(self.moveList)
+		moveNo, onMove = 1, 'w'
+		for move in self.moveList:
+			prefix, onMove, moveNo = (str(moveNo)+'.', 'b', moveNo) if onMove=='w' else ('', 'w', moveNo+1)
+			self.gameScore.insert('end', prefix)
+			self.gameScore.insert('end', move, ('move',))
+			self.gameScore.insert('end', ' ')
+		self.gameScore.config(state='disabled')
 
 	'''
 	Move a piece from on sq to another
