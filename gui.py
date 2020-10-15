@@ -28,6 +28,8 @@ class GUI:
 		self.pieceImgCache = {}
 		# List of moves in short algebreic notation
 		self.moveList = []
+		# list of tkinter text ranges for moves in games
+		self.moveIndices = []
 
 	def setup(self):
 		self.board = self.loadPgnFile('pgn/blind-warrior vs AnwarQ.pgn')
@@ -131,17 +133,43 @@ class GUI:
 		self.gameScore = tk.Text(self.controlFrame, width=10, font=("helvetica", 14))
 		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.gameScore.tag_bind('move', '<Button-1>', self.test)
-		self.gameScore.tag_configure('curMove', background="yellow", font=("helvetica", 14, 'bold', 'italic'))
+		self.gameScore.tag_bind('move', '<Button-1>', self.gameScoreClick)
+		self.gameScore.tag_configure('curMove', foreground="white", background="red")
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
 
-	def test(self, e):
+	# click on move in gamescore updates board to that move
+	def gameScoreClick(self, e):
+		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
-		text = self.gameScore.tag_prevrange('move', location)
-		print(self.gameScore.get(text[0], text[1]))
+		# find nearest previous move tag location
+		moveTagRange = self.gameScore.tag_prevrange('move', location)
+		clicked = (str(moveTagRange[0]), str(moveTagRange[1]))
+		# determine the half move number of the clicked move
+		halfMoveNo = self.moveIndices.index(clicked)
+		# determine half move number of the current move
+		curMove = self.board.fullmove_number*2-self.board.turn-2
+		# the distance to travel in the game score
+		distance = halfMoveNo-curMove
+		# quit if you clicked on the move you are already on
+		if distance == 0 : return
+		self.jumpToMove(distance)
+		self.printCurrentBoard()
+		self.updateGameScore()
+
+	# update self.board by half moves from current position
+	# distance int number of half moves to jump in game. Positive moves forward
+	# Negative distance moves back
+	def jumpToMove(self, distance):
+		for i in range(0,abs(distance)):
+			if distance>0:
+				move = self.moveHistory.pop()
+				self.board.push(move)
+			else:
+				move = self.board.pop()
+				self.moveHistory.append(move)
 
 	def populateGameScore(self):
 		self.gameScore.config(state='normal')
@@ -159,6 +187,9 @@ class GUI:
 		locArr = self.gameScore.tag_ranges('move')
 		# highlight last move
 		self.gameScore.tag_add('curMove', locArr[-2], locArr[-1])
+		# list of begin-end indices of each move
+		r = self.gameScore.tag_ranges('move')
+		self.moveIndices = [(str(r[i]), str(r[i+1])) for i in range(0,len(r),2)]
 
 	'''
 	Move a piece from on sq to another
@@ -323,13 +354,14 @@ class GUI:
 
 	# emphasize current move in game score
 	def updateGameScore(self):
-		idx = self.board.fullmove_number*2-self.board.turn-2
-		moves = self.gameScore.tag_ranges('move')
-		curTag = self.gameScore.tag_ranges('curMove')
-		if curTag:
-			self.gameScore.tag_remove('curMove', curTag[0], curTag[1])
-		if idx > -1:
-			self.gameScore.tag_add('curMove', moves[idx*2], moves[idx*2+1])
+		gs, bd = self.gameScore, self.board
+		# 0 based half move number, ie white's first move is 0
+		idx = bd.fullmove_number*2-bd.turn-2
+		moves = gs.tag_ranges('move')
+		# key.first will produce error when the key does not exist in text such as before the first move is made 
+		try: gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
+		except: pass
+		if idx > -1: gs.tag_add('curMove', moves[idx*2], moves[idx*2+1])
 
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
