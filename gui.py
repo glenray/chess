@@ -93,6 +93,7 @@ class GUI:
 		self.root.geometry(f"{self.boardSize*2}x{self.boardSize*2}")
 		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
+		self.root.bind('<Control-r>', self.reverseBoard)
 
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
@@ -127,10 +128,11 @@ class GUI:
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# game score
-		self.gameScore = tk.Text(self.controlFrame, width=10, font=("helvetica", 16))
+		self.gameScore = tk.Text(self.controlFrame, width=10, font=("helvetica", 14))
 		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.gameScore.tag_bind('move', '<Button-1>', self.test)
+		self.gameScore.tag_configure('curMove', background="yellow", font=("helvetica", 14, 'bold', 'italic'))
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
@@ -144,14 +146,19 @@ class GUI:
 	def populateGameScore(self):
 		self.gameScore.config(state='normal')
 		text = ''
-		length = len(self.moveList)
 		moveNo, onMove = 1, 'w'
 		for move in self.moveList:
-			prefix, onMove, moveNo = (str(moveNo)+'.', 'b', moveNo) if onMove=='w' else ('', 'w', moveNo+1)
+			if onMove == 'w':
+				prefix, onMove, moveNo = (f"{moveNo}.", 'b', moveNo) 
+			else: 
+				prefix, onMove, moveNo = ('', 'w', moveNo+1)
 			self.gameScore.insert('end', prefix)
 			self.gameScore.insert('end', move, ('move',))
 			self.gameScore.insert('end', ' ')
 		self.gameScore.config(state='disabled')
+		locArr = self.gameScore.tag_ranges('move')
+		# highlight last move
+		self.gameScore.tag_add('curMove', locArr[-2], locArr[-1])
 
 	'''
 	Move a piece from on sq to another
@@ -312,6 +319,18 @@ class GUI:
 		if isPromotion:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
+		self.updateGameScore()
+
+	# emphasize current move in game score
+	def updateGameScore(self):
+		idx = self.board.fullmove_number*2-self.board.turn-2
+		moves = self.gameScore.tag_ranges('move')
+		curTag = self.gameScore.tag_ranges('curMove')
+		if curTag:
+			self.gameScore.tag_remove('curMove', curTag[0], curTag[1])
+		if idx > -1:
+			self.gameScore.tag_add('curMove', moves[idx*2], moves[idx*2+1])
+
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
@@ -321,7 +340,7 @@ class GUI:
 
 	# toggles white on north or south side of the board
 	# bound to Reverse Button
-	def reverseBoard(self):
+	def reverseBoard(self, e=None):
 		self.whiteSouth = not self.whiteSouth
 		self.positionSquares()
 		self.printCurrentBoard()
