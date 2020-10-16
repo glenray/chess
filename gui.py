@@ -134,6 +134,8 @@ class GUI:
 		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.gameScore.tag_bind('move', '<Button-1>', self.gameScoreClick)
+		self.gameScore.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
+		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
 
 		# Add widgets to paned window
@@ -376,6 +378,12 @@ class GUI:
 		self.whiteSouth = not self.whiteSouth
 		self.positionSquares()
 		self.printCurrentBoard()
+
+	def cursorMove(self, status):
+		if status == 'leave':
+			self.gameScore.config(cursor='')
+		elif status == 'enter':
+			self.gameScore.config(cursor='hand2')
 
 if __name__ == '__main__':
 	g=GUI()
