@@ -390,23 +390,23 @@ class GUI:
 			self.gameScore.config(cursor='hand2')
 
 	def engine(self):
-		engineExe = "C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe"
-		engine = chess.engine.SimpleEngine.popen_uci(engineExe)
+		engine = chess.engine.SimpleEngine.popen_uci("C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe")
 		with engine.analysis(self.board) as analysis:
 			for info in analysis:
-				print(info.get("score"))
-				# print(info.get("pv"))
+				# if info.get("score") != None:
+				# 	print(info.get("score"), end="\r")
+				print(info.get("pv"))
 				if self.isEngineRunning == False:
+					print("Engine Off.")
 					break
 		engine.quit()
 
 	def runEngine(self, e):
 		if self.isEngineRunning == False:
 			self.isEngineRunning = True
-			threading.Thread(target=self.engine).start()
+			threading.Thread(target=self.engine, daemon=True).start()
 		else:
 			self.isEngineRunning = False
-
 
 if __name__ == '__main__':
 	g=GUI()
