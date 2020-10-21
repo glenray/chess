@@ -1,7 +1,9 @@
+import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 import chess
+import chess.engine
 import chess.pgn
 from PIL import Image, ImageTk
 from sqCanvas import sqCanvas
@@ -30,6 +32,7 @@ class GUI:
 		self.moveList = []
 		# list of tkinter text ranges for moves in games
 		self.moveIndices = []
+		self.isEngineRunning = False
 
 	def setup(self):
 		self.board = self.loadPgnFile('pgn/blind-warrior vs AnwarQ.pgn')
@@ -96,6 +99,7 @@ class GUI:
 		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.root.bind('<Control-r>', self.reverseBoard)
+		self.root.bind('<Control-e>', self.runEngine)
 
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
@@ -384,6 +388,25 @@ class GUI:
 			self.gameScore.config(cursor='')
 		elif status == 'enter':
 			self.gameScore.config(cursor='hand2')
+
+	def engine(self):
+		engineExe = "C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe"
+		engine = chess.engine.SimpleEngine.popen_uci(engineExe)
+		with engine.analysis(self.board) as analysis:
+			for info in analysis:
+				print(info.get("score"))
+				# print(info.get("pv"))
+				if self.isEngineRunning == False:
+					break
+		engine.quit()
+
+	def runEngine(self, e):
+		if self.isEngineRunning == False:
+			self.isEngineRunning = True
+			threading.Thread(target=self.engine).start()
+		else:
+			self.isEngineRunning = False
+
 
 if __name__ == '__main__':
 	g=GUI()
