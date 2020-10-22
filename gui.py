@@ -1,4 +1,4 @@
-import threading
+import threading, random, string
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
@@ -32,7 +32,8 @@ class GUI:
 		self.moveList = []
 		# list of tkinter text ranges for moves in games
 		self.moveIndices = []
-		self.isEngineRunning = False
+		# randomly generated name of active engine thread
+		self.activeEngine = None
 
 	def setup(self):
 		self.board = self.loadPgnFile('pgn/blind-warrior vs AnwarQ.pgn')
@@ -99,7 +100,7 @@ class GUI:
 		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.root.bind('<Control-r>', self.reverseBoard)
-		self.root.bind('<Control-e>', self.runEngine)
+		self.root.bind('<Control-e>', self.toggleEngine)
 
 		# Fonts and Styling
 		# print(font.families())	# prints available font families
@@ -164,6 +165,8 @@ class GUI:
 		self.jumpToMove(distance)
 		self.printCurrentBoard()
 		self.updateGameScore()
+		if self.activeEngine != None:
+			self.spawnEngine()
 
 	# update self.board by half moves from current position
 	# distance int number of half moves to jump in game. Positive moves forward
@@ -357,6 +360,8 @@ class GUI:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 		self.updateGameScore()
+		if self.activeEngine != None:
+			self.spawnEngine()
 
 	# emphasize current move in game score
 	def updateGameScore(self):
@@ -389,24 +394,38 @@ class GUI:
 		elif status == 'enter':
 			self.gameScore.config(cursor='hand2')
 
-	def engine(self):
+	# Engine analyzing the current board
+	# This is always run in a separate thread by self.spawnEngine()
+	# tName str name of the thread
+	# The thread running this engine will quit if it is no longer named
+	# as the active engine in self.activeEngine
+	def __engine(self, tName):
+		print(f"Engine {tName} On.")
 		engine = chess.engine.SimpleEngine.popen_uci("C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe")
 		with engine.analysis(self.board) as analysis:
 			for info in analysis:
-				# if info.get("score") != None:
-				# 	print(info.get("score"), end="\r")
-				print(info.get("pv"))
-				if self.isEngineRunning == False:
-					print("Engine Off.")
+				# if this is no longer the acive engine, then quit thread
+				if self.activeEngine != tName:
+					print(f"Engine {tName} Off.")
 					break
+				# print the game score
+				if info.get("score") != None:
+					print(str(info.get("score")).ljust(7, ' '), end="\r")
+				# print(info.get("pv"))
 		engine.quit()
 
-	def runEngine(self, e):
-		if self.isEngineRunning == False:
-			self.isEngineRunning = True
-			threading.Thread(target=self.engine, daemon=True).start()
+	# spawn a new engine thread when self.board changes 
+	def spawnEngine(self):
+		threadName = "".join(random.choice(string.ascii_letters) for _ in range(10))
+		self.activeEngine = threadName
+		threading.Thread(target=self.__engine, args=(threadName,), name=threadName, daemon=True).start()
+
+	# toggles an engine to analyze the current board position
+	def toggleEngine(self, e):
+		if self.activeEngine == None:
+			self.spawnEngine()
 		else:
-			self.isEngineRunning = False
+			self.activeEngine = None
 
 if __name__ == '__main__':
 	g=GUI()
