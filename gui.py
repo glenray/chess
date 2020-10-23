@@ -40,8 +40,8 @@ class GUI:
 		# self.setStartPos()
 		self.createWidgets()
 		self.createSquares()
-		self.canvas.update()
 		self.positionSquares()
+		self.canvas.update()
 		self.grabPieceImages(True)
 		self.printCurrentBoard()
 		self.populateGameScore()
@@ -408,24 +408,29 @@ class GUI:
 				if self.activeEngine != tName:
 					print(f"Engine {tName} Off.")
 					break
-				# print the game score
-				if info.get("score") != None:
-					score = str(info.get("score"))
-					moveList = self.board.variation_san(info.get('pv'))
+
+				score = info.get("score")
+				if score != None:
+					pv = info.get('pv')
+					pvString = self.board.variation_san(pv) if pv else 'None'
 					depth = info.get('depth')
 					nps = info.get('nps')
 					nodes = info.get('nodes')
 					time = info.get('time')
+					hashfull = info.get('hashfull')
 					output = f'''
 TName:	{tName}
-Score:	{score}
+Score:	{str(score)}
 Depth:	{depth}
 NPS:	{nps}
 Nodes:	{nodes}
 Time:	{time}
+Hash:	{hashfull}
 Principal Variation:
-{moveList}'''
+{pvString}'''
 					print(output)
+				else:
+					print('.')
 		engine.quit()
 
 	# spawn a new engine thread when self.board changes 
