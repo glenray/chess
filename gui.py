@@ -404,21 +404,36 @@ class GUI:
 		engine = chess.engine.SimpleEngine.popen_uci("C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe")
 		with engine.analysis(self.board) as analysis:
 			for info in analysis:
-				# if this is no longer the acive engine, then quit thread
+				# if this is no longer the active engine, quit thread
 				if self.activeEngine != tName:
 					print(f"Engine {tName} Off.")
 					break
 				# print the game score
 				if info.get("score") != None:
-					print(str(info.get("score")).ljust(7, ' '), end="\r")
-				# print(info.get("pv"))
+					score = str(info.get("score"))
+					moveList = self.board.variation_san(info.get('pv'))
+					depth = info.get('depth')
+					nps = info.get('nps')
+					nodes = info.get('nodes')
+					time = info.get('time')
+					output = f'''
+TName:	{tName}
+Score:	{score}
+Depth:	{depth}
+NPS:	{nps}
+Nodes:	{nodes}
+Time:	{time}
+Principal Variation:
+{moveList}'''
+					print(output)
 		engine.quit()
 
 	# spawn a new engine thread when self.board changes 
 	def spawnEngine(self):
+		# generate random thread name
 		threadName = "".join(random.choice(string.ascii_letters) for _ in range(10))
 		self.activeEngine = threadName
-		threading.Thread(target=self.__engine, args=(threadName,), name=threadName, daemon=True).start()
+		threading.Thread(target=self.__engine, args=(threadName,), daemon=True).start()
 
 	# toggles an engine to analyze the current board position
 	def toggleEngine(self, e):
