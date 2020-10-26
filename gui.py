@@ -41,7 +41,6 @@ class GUI:
 		self.createWidgets()
 		self.createSquares()
 		self.positionSquares()
-		self.loadPieceImages()
 		self.grabPieceImages()
 		self.printCurrentBoard()
 		self.populateGameScore()
@@ -75,6 +74,7 @@ class GUI:
 		self.canvas.delete(canvasIdx)
 		del self.pieceImgCache[chess.square_name(sq)]
 
+	# Cache png image file for each piece
 	def loadPieceImages(self):
 		# map internal piece abbreviations to png file names on disk
 		# The keys is the abbreviation: p=black pawn; P=white pawn, etc
@@ -90,12 +90,14 @@ class GUI:
 		for name in self.pieceImg:
 			self.tkPieceImg[name] = self.resizePieceImage(self.pieceImg[name])
 
+	# when board is resized, resize the piece images so as not to lose resolution
 	def resizePieceImage(self, im):
 		dim = int(round(self.boardSize/8))
 		if int(dim)  <= 0: return
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
 
+	# create all tkinter widgets and event bindings
 	def createWidgets(self):
 		# The window
 		self.root = tk.Tk()
