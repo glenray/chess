@@ -15,3 +15,15 @@ class sqCanvas(Canvas):
 	def on_resize(self, e):
 		side = min(self.master.winfo_width(), self.master.winfo_height())
 		self.config(width=side, height=side)
+
+strings = {}
+strings['permAnalysis'] = '''
+TName:	{tName}
+Score:	{score}
+Depth:	{depth}
+NPS:	{nps}
+Nodes:	{nodes}
+Time:	{time}
+Hash:	{hashfull}
+Principal Variation:
+{pvString}'''

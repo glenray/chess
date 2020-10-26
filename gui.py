@@ -7,6 +7,7 @@ import chess.engine
 import chess.pgn
 from PIL import Image, ImageTk
 from sqCanvas import sqCanvas
+from sqCanvas import strings
 
 class GUI:
 	def __init__(self):
@@ -418,26 +419,16 @@ class GUI:
 
 				score = info.get("score")
 				if score != None:
-					pv = info.get('pv')
-					pvString = self.board.variation_san(pv) if pv else 'None'
-					depth = info.get('depth')
-					nps = info.get('nps')
-					nodes = info.get('nodes')
-					time = info.get('time')
-					hashfull = info.get('hashfull')
-					output = f'''
-TName:	{tName}
-Score:	{str(score)}
-Depth:	{depth}
-NPS:	{nps}
-Nodes:	{nodes}
-Time:	{time}
-Hash:	{hashfull}
-Principal Variation:
-{pvString}'''
-					print(output)
-				else:
-					print('.')
+					print(strings['permAnalysis'].format(
+						tName = tName,
+						score = str(score),
+						depth = info.get('depth'),
+						nps = info.get('nps'),
+						nodes = info.get('nodes'),
+						time = info.get('time'),
+						hashfull = info.get('hashfull'),
+						pvString = self.board.variation_san(info.get('pv'))	
+					))
 		engine.quit()
 
 	# spawn a new engine thread when self.board changes 
