@@ -41,8 +41,8 @@ class GUI:
 		self.createWidgets()
 		self.createSquares()
 		self.positionSquares()
-		self.canvas.update()
-		self.grabPieceImages(True)
+		self.loadPieceImages()
+		self.grabPieceImages()
 		self.printCurrentBoard()
 		self.populateGameScore()
 		self.root.mainloop()
@@ -75,19 +75,24 @@ class GUI:
 		self.canvas.delete(canvasIdx)
 		del self.pieceImgCache[chess.square_name(sq)]
 
-	# populate dictonary containing png images of pieces
-	def grabPieceImages(self, doFiles = False):
+	def loadPieceImages(self):
 		# map internal piece abbreviations to png file names on disk
 		# The keys is the abbreviation: p=black pawn; P=white pawn, etc
 		# The values are the png image file names without the extension: eg bp.png
 		pieceNames = {'p':'bp', 'r':'br', 'n':'bn', 'b':'bb', 'q':'bq', 'k':'bk', 'P':'wp', 'R':'wr', 'N':'wn', 'B':'wb', 'Q':'wq', 'K':'wk'}
 		for name in pieceNames:
-			if doFiles:
-				self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
+			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
+
+	# populate dictonary containing png images of pieces
+	def grabPieceImages(self):
+		if not self.pieceImg:
+			self.loadPieceImages()
+		for name in self.pieceImg:
 			self.tkPieceImg[name] = self.resizePieceImage(self.pieceImg[name])
 
 	def resizePieceImage(self, im):
-		dim = int(round(self.canvas.winfo_width()/8))
+		dim = int(round(self.boardSize/8))
+		if int(dim)  <= 0: return
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
 
@@ -378,7 +383,7 @@ class GUI:
 	def resizeBoard(self, e):
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
-		self.grabPieceImages(False)
+		self.grabPieceImages()
 		self.printCurrentBoard()
 
 	# toggles white on north or south side of the board
