@@ -17,13 +17,6 @@ class sqCanvas(Canvas):
 		self.config(width=side, height=side)
 
 strings = {}
-strings['permAnalysis'] = '''
-TName:	{tName}
-Score:	{score}
-Depth:	{depth}
-NPS:	{nps}
-Nodes:	{nodes}
-Time:	{time}
-Hash:	{hashfull}
-Principal Variation:
+strings['permAnalysis'] = '''Score	Depth	Nodes		NPS		Time
+{score}	{depth}	{nodes:,}		{nps:,}		{time}
 {pvString}'''

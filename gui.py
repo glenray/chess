@@ -151,6 +151,11 @@ class GUI:
 		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
 
+		# analysis pane
+		self.analysis = tk.Text(self.controlFrame, height=10)
+		self.analysis.config(wrap=tk.WORD, padx=10, pady=10)
+		self.analysis.pack(anchor='n', expand=True, fill='both')
+
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
 		self.pWindow.add(self.controlFrame, weight=1)
@@ -417,18 +422,18 @@ class GUI:
 					print(f"Engine {tName} Off.")
 					break
 
-				score = info.get("score")
-				if score != None:
-					print(strings['permAnalysis'].format(
-						tName = tName,
-						score = str(score),
+				pv = info.get('pv')
+				if pv != None and len(pv) > 5:
+					output = strings['permAnalysis'].format(
+						score = info.get("score").white(),
 						depth = info.get('depth'),
 						nps = info.get('nps'),
 						nodes = info.get('nodes'),
 						time = info.get('time'),
-						hashfull = info.get('hashfull'),
-						pvString = self.board.variation_san(info.get('pv'))	
-					))
+						pvString = self.board.variation_san(pv)	
+					)
+					self.analysis.delete('0.0', 'end')
+					self.analysis.insert("0.1", output)
 		engine.quit()
 
 	# spawn a new engine thread when self.board changes 
