@@ -2,12 +2,17 @@ import pdb
 # pdb.set_trace()
 import chess
 import chess.pgn
+import copy
 
 class gameScoreVisitor(chess.pgn.BaseVisitor):
 	def __init__(self, game):
 		self.output = ""
 		self.startsVariation = False
+		self.endsVariation = False
 		self.game = game
+		self.currentNode = self.game
+		self.varStack = []
+		self.nodes = []
 
 	def end_headers(self):
 		g=self.game.headers
@@ -21,23 +26,39 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 		# 	self.output += f"{tagname}: {tagvalue}\n"
 
 	def visit_move(self, board, move):
+		# pdb.set_trace()
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
-		if self.startsVariation and board.turn == False:
+		if self.endsVariation:
+			self.endsVariation = False
+			self.currentNode = self.varStack.pop()
+			self.output+=")\n"
+
+		if self.startsVariation:
 			self.startsVariation = False
-			moveNo = f"{board.fullmove_number}..."
+			if board.turn == False:
+				moveNo = f"{board.fullmove_number}..."
+			self.varStack.append(self.currentNode)
+			self.currentNode = self.currentNode.parent
+			self.output+="\n("
+
+		self.currentNode = self.currentNode.variation(move)
+		self.nodes.append(self.currentNode)
 		self.output += f"{moveNo}{board.san(move)} "
 
 	def begin_variation(self):
 		self.startsVariation = True
-		self.output+="\n("
 
 	def end_variation(self):
-		self.output+=")\n"
+		self.endsVariation = True
 
 	def visit_comment(self, comment):
-		self.output+=f"{{{comment}}} ".replace('\n', ' ')
+		c = f"{{{comment}}} ".replace('\n', ' ')
+		c = '\n'+c+'\n'
+		self.output += c
+
 
 	def result(self):
+		# pdb.set_trace()
 		return self.output
 
 
@@ -48,4 +69,6 @@ if __name__ == '__main__':
 
 	game = chess.pgn.read_game(pgnFile)
 	v = gameScoreVisitor(game)
-	print(game.accept(v))
+	output = game.accept(v)
+	pdb.set_trace()
+	print(output)

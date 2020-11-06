@@ -8,6 +8,7 @@ import chess.pgn
 from PIL import Image, ImageTk
 from sqCanvas import sqCanvas
 from sqCanvas import strings
+from gameScoreVisitor import gameScoreVisitor
 
 class GUI:
 	def __init__(self):
@@ -35,9 +36,10 @@ class GUI:
 		self.moveIndices = []
 		# randomly generated name of active engine thread
 		self.activeEngine = None
+		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
 
 	def setup(self):
-		self.board = self.loadPgnFile('pgn/blind-warrior vs AnwarQ.pgn')
+		self.board = self.loadPgnFile(self.pgnFile)
 		# self.setStartPos()
 		self.createWidgets()
 		self.createSquares()
@@ -143,7 +145,7 @@ class GUI:
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# game score
-		self.gameScore = tk.Text(self.controlFrame, width=10, font=("helvetica", 14))
+		self.gameScore = tk.Text(self.controlFrame, width=10, font=("Tahoma", 14))
 		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.gameScore.tag_bind('move', '<Button-1>', self.gameScoreClick)
