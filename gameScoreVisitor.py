@@ -5,19 +5,24 @@ import chess.pgn
 import copy
 
 class gameScoreVisitor(chess.pgn.BaseVisitor):
-	def __init__(self, game):
+	def __init__(self, gui):
+# this will go
 		self.output = ""
 		self.startsVariation = False
 		self.endsVariation = False
-		self.game = game
-		self.currentNode = self.game
+		self.gui = gui
+		self.currentNode = self.gui.game
 		self.varStack = []
 		self.nodes = []
 
 	def end_headers(self):
-		g=self.game.headers
-		self.output += f"{g['White']} ({g['WhiteElo']}) vs. {g['Black']} ({g['BlackElo']})"
-		self.output += f"\nECO: {g['ECO']}\n\n"
+		gs = self.gui.gameScore
+		gs.config(state='normal')
+		g=self.gui.game.headers
+		gameTitle = f"{g['White']} ({g['WhiteElo']}) vs. {g['Black']} ({g['BlackElo']})"
+		eco = f"\nECO: {g['ECO']}\n\n"
+		gs.insert("end", gameTitle)
+		gs.insert("end", eco)
 
 	def visit_header(self, tagname, tagvalue):
 		pass
@@ -27,11 +32,12 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 
 	def visit_move(self, board, move):
 		# pdb.set_trace()
+		gs = self.gui.gameScore
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
 		if self.endsVariation:
 			self.endsVariation = False
 			self.currentNode = self.varStack.pop()
-			self.output+=")\n"
+			gs.insert("end", ")")
 
 		if self.startsVariation:
 			self.startsVariation = False
@@ -39,11 +45,13 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 				moveNo = f"{board.fullmove_number}..."
 			self.varStack.append(self.currentNode)
 			self.currentNode = self.currentNode.parent
-			self.output+="\n("
+			gs.insert("end", "(")
 
 		self.currentNode = self.currentNode.variation(move)
 		self.nodes.append(self.currentNode)
-		self.output += f"{moveNo}{board.san(move)} "
+		gs.insert('end', f"{moveNo}")
+		# tag each move
+		gs.insert('end', f"{board.san(move)} ", ('move',))
 
 	def begin_variation(self):
 		self.startsVariation = True
@@ -53,22 +61,7 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 
 	def visit_comment(self, comment):
 		c = f"{{{comment}}} ".replace('\n', ' ')
-		c = '\n'+c+'\n'
-		self.output += c
-
+		self.gui.gameScore.insert('end', c)
 
 	def result(self):
-		# pdb.set_trace()
-		return self.output
-
-
-if __name__ == '__main__':
-	# pgnPath = "pgn/testE.pgn"
-	pgnPath = "pgn/Annotated_Games.pgn"
-	pgnFile = open(pgnPath, 'r')
-
-	game = chess.pgn.read_game(pgnFile)
-	v = gameScoreVisitor(game)
-	output = game.accept(v)
-	pdb.set_trace()
-	print(output)
+		return self.nodes

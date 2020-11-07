@@ -2,6 +2,7 @@ import threading, random, string
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
+from tkinter import scrolledtext
 import chess
 import chess.engine
 import chess.pgn
@@ -36,17 +37,26 @@ class GUI:
 		self.moveIndices = []
 		# randomly generated name of active engine thread
 		self.activeEngine = None
-		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		# list of nodes in mainline and all variations
+		self.nodes = []
+		# self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		self.pgnFile = 'pgn/Annotated_Games.pgn'
+		self.game = chess.pgn.read_game(open(self.pgnFile))
 
 	def setup(self):
+		self.createWidgets()
 		self.board = self.loadPgnFile(self.pgnFile)
 		# self.setStartPos()
-		self.createWidgets()
+		# sets the game score and populate the node list
+		self.nodes = self.game.accept(gameScoreVisitor(self))
+		# self.populateGameScore()
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
 		self.printCurrentBoard()
-		self.populateGameScore()
+		# move to bottom of game score
+		self.gameScore.update()
+		self.gameScore.yview_moveto(1)
 		self.root.mainloop()
 
 	def setStartPos(self):
@@ -145,7 +155,7 @@ class GUI:
 		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# game score
-		self.gameScore = tk.Text(self.controlFrame, width=10, font=("Tahoma", 14))
+		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
 		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.gameScore.tag_bind('move', '<Button-1>', self.gameScoreClick)
@@ -195,25 +205,25 @@ class GUI:
 				move = self.board.pop()
 				self.moveHistory.append(move)
 
-	def populateGameScore(self):
-		self.gameScore.config(state='normal')
-		text = ''
-		moveNo, onMove = 1, 'w'
-		for move in self.moveList:
-			if onMove == 'w':
-				prefix, onMove, moveNo = (f"{moveNo}.", 'b', moveNo) 
-			else: 
-				prefix, onMove, moveNo = ('', 'w', moveNo+1)
-			self.gameScore.insert('end', prefix)
-			self.gameScore.insert('end', move, ('move',))
-			self.gameScore.insert('end', ' ')
-		self.gameScore.config(state='disabled')
-		locArr = self.gameScore.tag_ranges('move')
-		# highlight last move
-		self.gameScore.tag_add('curMove', locArr[-2], locArr[-1])
-		# list of begin-end indices of each move
-		r = self.gameScore.tag_ranges('move')
-		self.moveIndices = [(str(r[i]), str(r[i+1])) for i in range(0,len(r),2)]
+	# def populateGameScore(self):
+		# self.gameScore.config(state='normal')
+		# text = ''
+		# moveNo, onMove = 1, 'w'
+		# for move in self.moveList:
+		# 	if onMove == 'w':
+		# 		prefix, onMove, moveNo = (f"{moveNo}.", 'b', moveNo) 
+		# 	else: 
+		# 		prefix, onMove, moveNo = ('', 'w', moveNo+1)
+		# 	self.gameScore.insert('end', prefix)
+		# 	self.gameScore.insert('end', move, ('move',))
+		# 	self.gameScore.insert('end', ' ')
+		# self.gameScore.config(state='disabled')
+		# locArr = self.gameScore.tag_ranges('move')
+		# # highlight last move
+		# self.gameScore.tag_add('curMove', locArr[-2], locArr[-1])
+		# # list of begin-end indices of each move
+		# r = self.gameScore.tag_ranges('move')
+		# self.moveIndices = [(str(r[i]), str(r[i+1])) for i in range(0,len(r),2)]
 
 	'''
 	Move a piece from on sq to another
