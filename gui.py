@@ -11,6 +11,8 @@ from sqCanvas import sqCanvas
 from sqCanvas import strings
 from gameScoreVisitor import gameScoreVisitor
 
+import pdb
+
 class GUI:
 	def __init__(self):
 		self.boardSize = 400
@@ -18,7 +20,7 @@ class GUI:
 		self.darkColorSq = "brown"
 		self.squares = []		# list of canvas ids for all canvas rectangles
 		# python chess board object
-		self.board = chess.Board()
+		# self.board = chess.Board()
 		# a list of tkinter formatted and resized images generated from the png files
 		# They are stored here only to protect them from garbage collection.
 		self.pieceTkImg = []
@@ -39,24 +41,25 @@ class GUI:
 		self.activeEngine = None
 		# list of nodes in mainline and all variations
 		self.nodes = []
+		self.curNode = None
 		# self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
 		self.pgnFile = 'pgn/Annotated_Games.pgn'
+		# self.pgnFile = 'pgn/testC.pgn'
 		self.game = chess.pgn.read_game(open(self.pgnFile))
 
 	def setup(self):
 		self.createWidgets()
-		self.board = self.loadPgnFile(self.pgnFile)
+		# self.board = self.loadPgnFile(self.pgnFile)
 		# self.setStartPos()
 		# sets the game score and populate the node list
 		self.nodes = self.game.accept(gameScoreVisitor(self))
+		# current node set before the first move.
+		self.curNode = self.nodes[0].parent
 		# self.populateGameScore()
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
 		self.printCurrentBoard()
-		# move to bottom of game score
-		self.gameScore.update()
-		self.gameScore.yview_moveto(1)
 		self.root.mainloop()
 
 	def setStartPos(self):
@@ -64,6 +67,7 @@ class GUI:
 		self.printCurrentBoard()
 
 	def printCurrentBoard(self):
+		self.board = self.curNode.board()
 		self.canvas.delete('piece')
 		# piece_map returns a dictionary where 
 		# key is the square number and value is a piece object
@@ -245,12 +249,13 @@ class GUI:
 		self.pieceImgCache.pop(fromSqName)
 
 	def testMoveProperties(self, move):
+		print(move.promotion)
 		return (
 			self.board.is_castling(move),
 			self.board.is_kingside_castling(move),
 			self.board.is_capture(move),
 			self.board.is_en_passant(move),
-			self.board.uci(move)[-1] in ('q', 'b', 'n', 'r')		
+			move.promotion		
 		)
 
 	def movePiece(self, move, direction):
@@ -349,28 +354,23 @@ class GUI:
 		return board
 
 	''' Event bindings '''
-	# Updates GUI after moving though move stack in both directions
+	# Updates GUI after moving though game nodes both directions
 	# bound to left and right arrow keys at root
 	def move(self, e, direction):
 		if direction == 'forward':
-			# quit if already at end of the game
-			if len(self.moveHistory) == 0 : return
-			move = self.moveHistory.pop()
-			# Moving forward in the move list, testing must be done before the move is 
-			# pushed onto the board.
-			# These test return true only for valid moves
+			if self.curNode.is_end(): return
+			self.curNode = self.curNode.variations[0]
+			move = self.curNode.move
 			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
 					isPromotion) = self.testMoveProperties(move)
-			self.board.push(move)
+			self.board = self.curNode.board()
 		else:
-			# quite if already at beginning of the game
-			if len(self.board.move_stack) == 0 : return
-			move = self.board.pop()
-			# Moving back in move list, testing must be done after the move is
-			# popped back onto the board
+			if self.curNode == self.curNode.game(): return
+			move = self.curNode.move
+			self.board = self.curNode.parent.board()
 			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
 				isPromotion) = self.testMoveProperties(move)
-			self.moveHistory.append(move)
+			self.curNode=self.curNode.parent
 
 		if isCaptureMove:
 			if isEnPassant:

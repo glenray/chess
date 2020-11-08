@@ -19,8 +19,10 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 		gs = self.gui.gameScore
 		gs.config(state='normal')
 		g=self.gui.game.headers
-		gameTitle = f"{g['White']} ({g['WhiteElo']}) vs. {g['Black']} ({g['BlackElo']})"
-		eco = f"\nECO: {g['ECO']}\n\n"
+		whiteElo = f" ({g['WhiteElo']})" if 'WhiteElo' in g else ''
+		blackElo = f" ({g['BlackElo']})" if 'BlackElo' in g else ''
+		gameTitle = f"{g['White']}{whiteElo} vs. {g['Black']}{blackElo}"
+		eco = f"\nECO: {g['ECO']}\n\n" if 'ECO' in g else '\n\n'
 		gs.insert("end", gameTitle)
 		gs.insert("end", eco)
 
@@ -51,7 +53,8 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 		self.nodes.append(self.currentNode)
 		gs.insert('end', f"{moveNo}")
 		# tag each move
-		gs.insert('end', f"{board.san(move)} ", ('move',))
+		gs.insert('end', f"{board.san(move)}", ('move',))
+		gs.insert('end', " ")
 
 	def begin_variation(self):
 		self.startsVariation = True
@@ -63,5 +66,7 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 		c = f"{{{comment}}} ".replace('\n', ' ')
 		self.gui.gameScore.insert('end', c)
 
+	# return the list of nodes
 	def result(self):
+		self.gui.gameScore.config(state='disabled')
 		return self.nodes
