@@ -32,8 +32,8 @@ class GUI:
 		# list of nodes in mainline and all variations
 		self.nodes = []
 		self.curNode = None
-		# self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
-		self.pgnFile = 'pgn/Annotated_Games.pgn'
+		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		# self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
 		self.game = chess.pgn.read_game(open(self.pgnFile))
 		# index of node.variations[index] selected in the variations popup
@@ -306,12 +306,15 @@ class GUI:
 		# prevent right arrow event on root from advancing to next move
 		# in self.gameScore
 		self.root.unbind('<Right>')
+		# popup Window
 		varPop = tk.Toplevel(self.root)
 		varPop.title("Variations")
-		varPop.bind("<Escape>", lambda e: varPop.destroy())
+		varPop.bind("<Escape>", lambda e: returnVar(e, lb))
 		varPop.bind("<Right>", lambda e: returnVar(e, lb))
-		label = tk.Label(varPop, text="Variations")
+		# Label
+		label = tk.Label(varPop, text="Variations", pady=10)
 		label.pack()
+		# variations list box
 		lb = tk.Listbox(varPop)
 		for var in self.curNode.variations:
 			b=var.parent.board()
@@ -418,7 +421,7 @@ class GUI:
 					break
 
 				pv = info.get('pv')
-				if pv != None and len(pv) > 5:
+				if pv != None and (len(pv) > 5 or info.get("score").is_mate()):
 					output = strings['permAnalysis'].format(
 						score = info.get("score").white(),
 						depth = info.get('depth'),
