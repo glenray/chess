@@ -46,6 +46,8 @@ class GUI:
 		self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
 		self.game = chess.pgn.read_game(open(self.pgnFile))
+		# used to store index of node.variations selected in the variations popup
+		self.varIdx = None
 
 	def setup(self):
 		self.createWidgets()
@@ -179,54 +181,20 @@ class GUI:
 	def gameScoreClick(self, e):
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
-		# find nearest previous move tag location
+		# find the indices of the clicked move tag
 		moveTagRange = self.gameScore.tag_prevrange('move', location)
-		clicked = (str(moveTagRange[0]), str(moveTagRange[1]))
-		# determine the half move number of the clicked move
-		halfMoveNo = self.moveIndices.index(clicked)
-		# determine half move number of the current move
-		curMove = self.board.fullmove_number*2-self.board.turn-2
-		# the distance to travel in the game score
-		distance = halfMoveNo-curMove
-		# quit if you clicked on the move you are already on
-		if distance == 0 : return
-		self.jumpToMove(distance)
+		# tuple of begin and end indices for all move tags
+		ranges = self.gameScore.tag_ranges('move')
+		# convert range to pairs of tuples so they can be compared with moveTagRange
+		for x in range(0, len(ranges), 2):
+			self.moveIndices.append((str(ranges[x]), str(ranges[x+1])))
+		# set currentNode to the clicked move
+		# we add 1 because nodes[0] is the opening position which cannot be clicked
+		self.curNode = self.nodes[self.moveIndices.index(moveTagRange)+1]
 		self.printCurrentBoard()
 		self.updateGameScore()
 		if self.activeEngine != None:
 			self.spawnEngine()
-
-	# update self.board by half moves from current position
-	# distance int number of half moves to jump in game. Positive moves forward
-	# Negative distance moves back
-	def jumpToMove(self, distance):
-		for i in range(0,abs(distance)):
-			if distance>0:
-				move = self.moveHistory.pop()
-				self.board.push(move)
-			else:
-				move = self.board.pop()
-				self.moveHistory.append(move)
-
-	# def populateGameScore(self):
-		# self.gameScore.config(state='normal')
-		# text = ''
-		# moveNo, onMove = 1, 'w'
-		# for move in self.moveList:
-		# 	if onMove == 'w':
-		# 		prefix, onMove, moveNo = (f"{moveNo}.", 'b', moveNo) 
-		# 	else: 
-		# 		prefix, onMove, moveNo = ('', 'w', moveNo+1)
-		# 	self.gameScore.insert('end', prefix)
-		# 	self.gameScore.insert('end', move, ('move',))
-		# 	self.gameScore.insert('end', ' ')
-		# self.gameScore.config(state='disabled')
-		# locArr = self.gameScore.tag_ranges('move')
-		# # highlight last move
-		# self.gameScore.tag_add('curMove', locArr[-2], locArr[-1])
-		# # list of begin-end indices of each move
-		# r = self.gameScore.tag_ranges('move')
-		# self.moveIndices = [(str(r[i]), str(r[i+1])) for i in range(0,len(r),2)]
 
 	'''
 	Move a piece from on sq to another
@@ -414,7 +382,9 @@ class GUI:
 			gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
 		if nodeIdx: 
 			gs.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
-		gs.see('curMove.first')
+		# keep the current move visible in the game score
+		if gs.tag_ranges('curMove'):
+			gs.see('curMove.first')
 
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
