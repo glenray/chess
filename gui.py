@@ -19,13 +19,7 @@ class GUI:
 		self.lightColorSq = "yellow"
 		self.darkColorSq = "brown"
 		self.squares = []		# list of canvas ids for all canvas rectangles
-		# python chess board object
-		# self.board = chess.Board()
-		# a list of tkinter formatted and resized images generated from the png files
-		# They are stored here only to protect them from garbage collection.
-		self.pieceTkImg = []
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
-		self.moveHistory = []	# populate with newer moves when going back in the move stack
 		# a dictonary of pillow image objects for each piece png file
 		self.pieceImg = {}
 		# a dictonary of tkImage objects for each piece resized for current board
@@ -33,10 +27,6 @@ class GUI:
 		# a dictionary where key is square name and value is
 		# the canvas index corresponding to the piece on the square
 		self.pieceImgCache = {}
-		# List of moves in short algebreic notation
-		self.moveList = []
-		# list of tkinter text ranges for moves in games
-		self.moveIndices = []
 		# randomly generated name of active engine thread
 		self.activeEngine = None
 		# list of nodes in mainline and all variations
@@ -46,17 +36,15 @@ class GUI:
 		self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
 		self.game = chess.pgn.read_game(open(self.pgnFile))
-		# used to store index of node.variations selected in the variations popup
+		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
 
 	def setup(self):
 		self.createWidgets()
-		# self.setStartPos()
-		# sets the game score and populate the node list
+		# sets the game score and populate the self.nodes list
 		self.nodes = self.game.accept(gameScoreVisitor(self))
 		# current node set before the first move.
 		self.curNode = self.nodes[0]
-		# self.populateGameScore()
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()
@@ -72,7 +60,6 @@ class GUI:
 		self.canvas.delete('piece')
 		# piece_map returns a dictionary where 
 		# key is the square number and value is a piece object
-		# piece.symbol() returns the letter description for the piece, eg P or p  
 		# Square numbers start at 0 which is the bottom right square,
 		# home to the white light squared rook.
 		pm = self.board.piece_map()
@@ -83,6 +70,7 @@ class GUI:
 		sqName = chess.square_name(square)
 		coords = self.canvas.coords(sqName)
 		piece = self.board.piece_at(square)
+		# piece.symbol() returns the letter description for the piece, eg P or p  
 		pieceName = piece.symbol()
 		i=self.canvas.create_image((coords[0], coords[1]), image=self.tkPieceImg[pieceName], anchor='nw', tag='piece')
 		self.pieceImgCache[sqName] = i
@@ -95,13 +83,13 @@ class GUI:
 	# Cache png image file for each piece
 	def loadPieceImages(self):
 		# map internal piece abbreviations to png file names on disk
-		# The keys is the abbreviation: p=black pawn; P=white pawn, etc
+		# key: the piece abbreviation: p=black pawn; P=white pawn, etc
 		# The values are the png image file names without the extension: eg bp.png
 		pieceNames = {'p':'bp', 'r':'br', 'n':'bn', 'b':'bb', 'q':'bq', 'k':'bk', 'P':'wp', 'R':'wr', 'N':'wn', 'B':'wb', 'Q':'wq', 'K':'wk'}
 		for name in pieceNames:
 			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
 
-	# populate dictonary containing png images of pieces
+	# populate dictonary containing tk compatible piece images
 	def grabPieceImages(self):
 		if not self.pieceImg:
 			self.loadPieceImages()
@@ -179,6 +167,7 @@ class GUI:
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
+		moveIndices = []
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
 		# find the indices of the clicked move tag
@@ -187,10 +176,11 @@ class GUI:
 		ranges = self.gameScore.tag_ranges('move')
 		# convert range to pairs of tuples so they can be compared with moveTagRange
 		for x in range(0, len(ranges), 2):
-			self.moveIndices.append((str(ranges[x]), str(ranges[x+1])))
+			moveIndices.append((str(ranges[x]), str(ranges[x+1])))
 		# set currentNode to the clicked move
-		# we add 1 because nodes[0] is the opening position which cannot be clicked
-		self.curNode = self.nodes[self.moveIndices.index(moveTagRange)+1]
+		# we add 1 because nodes[0] is the opening position which 
+		# is not represented as a move on the game score
+		self.curNode = self.nodes[moveIndices.index(moveTagRange)+1]
 		self.printCurrentBoard()
 		self.updateGameScore()
 		if self.activeEngine != None:
@@ -202,16 +192,15 @@ class GUI:
 	@ toSq obj chess.square object to relocate piece
 	'''
 	def moveCanvasPiece(self, fromSq, toSq):
-		fromSqName = chess.square_name(fromSq)
-		toSqName = chess.square_name(toSq)
-		fromSqCoords = self.canvas.coords(fromSqName)
-		toSqCoords = self.canvas.coords(toSqName)
+		csn, cc = chess.square_name, self.canvas.coords
+		fromSqName, toSqName = csn(fromSq), csn(toSq)
+		fromSqCoords, toSqCoords = cc(fromSqName), cc(toSqName)
 		obj = self.pieceImgCache[fromSqName]
 		# find the distance between the from and to coordinates
 		dx = toSqCoords[0]-fromSqCoords[0]
 		dy = toSqCoords[1]-fromSqCoords[1]
 		self.canvas.move(obj, dx, dy)
-
+		# update image cache to add piece at toSq and remove piece at fromSq
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
 
