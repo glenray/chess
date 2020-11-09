@@ -13,7 +13,7 @@ class gameScoreVisitor(chess.pgn.BaseVisitor):
 		self.gui = gui
 		self.currentNode = self.gui.game
 		self.varStack = []
-		self.nodes = []
+		self.nodes = [self.currentNode]
 
 	def end_headers(self):
 		gs = self.gui.gameScore

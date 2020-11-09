@@ -49,12 +49,11 @@ class GUI:
 
 	def setup(self):
 		self.createWidgets()
-		# self.board = self.loadPgnFile(self.pgnFile)
 		# self.setStartPos()
 		# sets the game score and populate the node list
 		self.nodes = self.game.accept(gameScoreVisitor(self))
 		# current node set before the first move.
-		self.curNode = self.nodes[0].parent
+		self.curNode = self.nodes[0]
 		# self.populateGameScore()
 		self.createSquares()
 		self.positionSquares()
@@ -127,7 +126,7 @@ class GUI:
 		self.root.bind('<Control-e>', self.toggleEngine)
 
 		# Fonts and Styling
-		# print(font.families())	# prints available font families
+		# print(font.families())	prints available font families
 		buttonFont = font.Font(family="Tahoma", size=16)
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'groove', "font":buttonFont}
 
@@ -249,7 +248,6 @@ class GUI:
 		self.pieceImgCache.pop(fromSqName)
 
 	def testMoveProperties(self, move):
-		print(move.promotion)
 		return (
 			self.board.is_castling(move),
 			self.board.is_kingside_castling(move),
@@ -343,16 +341,6 @@ class GUI:
 			ypos += direction
 			xpos = xreset
 
-	# returns a board object of game loaded from pgn file
-	def loadPgnFile(self, path):
-		pgn = open(path)
-		game = chess.pgn.read_game(pgn)
-		board = game.board()
-		for move in game.mainline_moves():
-			self.moveList.append(board.san(move))
-			board.push(move)
-		return board
-
 	''' Event bindings '''
 	# Updates GUI after moving though game nodes both directions
 	# bound to left and right arrow keys at root
@@ -390,14 +378,12 @@ class GUI:
 
 	# emphasize current move in game score
 	def updateGameScore(self):
-		gs, bd = self.gameScore, self.board
-		# 0 based half move number, ie white's first move is 0
-		idx = bd.fullmove_number*2-bd.turn-2
-		moves = gs.tag_ranges('move')
-		# key.first will produce error when the key does not exist in text such as before the first move is made 
-		try: gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
-		except: pass
-		if idx > -1: gs.tag_add('curMove', moves[idx*2], moves[idx*2+1])
+		gs = self.gameScore
+		nodeIdx = self.nodes.index(self.curNode)
+		ranges = gs.tag_ranges('move')
+		if gs.tag_ranges('curMove'):
+			gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
+		if nodeIdx: gs.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
 
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
