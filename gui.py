@@ -341,13 +341,42 @@ class GUI:
 			ypos += direction
 			xpos = xreset
 
+	# pop up window when variations are encountered
+	def varPopUp(self):
+		def returnVar(e, lb):
+			self.varIdx = lb.curselection()[0]
+			varPop.destroy()
+
+		varPop = tk.Toplevel(self.root)
+		varPop.title("Variations")
+		varPop.geometry("400x200")
+		varPop.bind("<Escape>", lambda e: varPop.destroy())
+		varPop.bind("<Right>", lambda e: returnVar(e, lb))
+		lb = tk.Listbox(varPop)
+		for var in self.curNode.variations:
+			lb.insert(self.nodes.index(var), var.san())
+		lb.pack()
+		lb.focus_force()
+		lb.selection_set(0)
+		# pause main_loop until varPop finishes
+		self.root.wait_window(varPop)
+
+	# If mainline has alternative variations, popup a variation window
+	# to select the desired variation.
+	def varWindow(self):
+		if len(self.curNode.variations)>1:
+			varIdx = self.varPopUp()
+			return self.curNode.variations[self.varIdx]
+		else:
+			return self.curNode.variations[0]
+
 	''' Event bindings '''
 	# Updates GUI after moving though game nodes both directions
 	# bound to left and right arrow keys at root
 	def move(self, e, direction):
 		if direction == 'forward':
 			if self.curNode.is_end(): return
-			self.curNode = self.curNode.variations[0]
+			self.curNode = self.varWindow()
 			move = self.curNode.move
 			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
 					isPromotion) = self.testMoveProperties(move)
@@ -383,7 +412,9 @@ class GUI:
 		ranges = gs.tag_ranges('move')
 		if gs.tag_ranges('curMove'):
 			gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
-		if nodeIdx: gs.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
+		if nodeIdx: 
+			gs.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
+		gs.see('curMove.first')
 
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
