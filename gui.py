@@ -303,20 +303,27 @@ class GUI:
 		def returnVar(e, lb):
 			self.varIdx = lb.curselection()[0]
 			varPop.destroy()
-
+		# prevent right arrow event on root from advancing to next move
+		# in self.gameScore
+		self.root.unbind('<Right>')
 		varPop = tk.Toplevel(self.root)
 		varPop.title("Variations")
-		varPop.geometry("400x200")
 		varPop.bind("<Escape>", lambda e: varPop.destroy())
 		varPop.bind("<Right>", lambda e: returnVar(e, lb))
+		label = tk.Label(varPop, text="Variations")
+		label.pack()
 		lb = tk.Listbox(varPop)
 		for var in self.curNode.variations:
-			lb.insert(self.nodes.index(var), var.san())
+			b=var.parent.board()
+			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
+			lb.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
 		lb.pack()
 		lb.focus_force()
 		lb.selection_set(0)
 		# pause main_loop until varPop finishes
 		self.root.wait_window(varPop)
+		# Re-bind right arrow key to root for move navigation
+		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
 
 	# If mainline has alternative variations, popup a variation window
 	# to select the desired variation.
