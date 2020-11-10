@@ -30,6 +30,7 @@ class GUI:
 		# randomly generated name of active engine thread
 		self.activeEngine = None
 		# list of nodes in mainline and all variations
+		# populated by gameScoreVisitor class
 		self.nodes = []
 		self.curNode = None
 		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
@@ -42,7 +43,7 @@ class GUI:
 	def setup(self):
 		self.createWidgets()
 		# sets the game score and populate the self.nodes list
-		self.nodes = self.game.accept(gameScoreVisitor(self))
+		self.game.accept(gameScoreVisitor(self))
 		# current node set before the first move.
 		self.curNode = self.nodes[0]
 		self.createSquares()
