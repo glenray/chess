@@ -10,6 +10,7 @@ from PIL import Image, ImageTk
 from sqCanvas import sqCanvas
 from sqCanvas import strings
 from gameScoreVisitor import gameScoreVisitor
+from blunderCheck import blunderCheck
 
 import pdb
 
@@ -140,8 +141,8 @@ class GUI:
 		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue", padx=5, pady=5)
 		self.buttonBarFrame.pack(anchor='n', fill='x')
 
-		# New Game Button
-		self.newGameButton = tk.Button(self.buttonBarFrame, buttonOptions, text="New Game", command=self.setStartPos)
+		# Blunder Check Button
+		self.newGameButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Blunder Check", command=self.blunderCheck)
 		self.newGameButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
 		# Reverse Board Button
@@ -448,6 +449,15 @@ class GUI:
 			self.spawnEngine()
 		else:
 			self.activeEngine = None
+
+	# start blunder check
+	def blunderCheck(self, e=None):
+		bc = blunderCheck(self)
+		# bc.interGame()
+		threading.Thread(
+			target=bc.interGame, 
+			kwargs=dict(depth=10), 
+			daemon=True).start()		
 
 if __name__ == '__main__':
 	g=GUI()
