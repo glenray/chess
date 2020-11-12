@@ -68,8 +68,11 @@ class GUI:
 
 	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
+		variationsLength = len(self.variations.get(0, tk.END))
+		# quit if there are no variations, i.e. the end of a variation
+		if variationsLength == 0: return
 		curIdx = self.variations.curselection()[0]
-		isBottom = curIdx == len(self.variations.get(0, tk.END))-1
+		isBottom = curIdx == variationsLength-1
 		isTop = curIdx == 0
 		# Down arrow
 		if e.keycode == 40:
@@ -147,6 +150,7 @@ class GUI:
 		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.root.bind('<Control-r>', self.reverseBoard)
 		self.root.bind('<Control-e>', self.toggleEngine)
+		self.root.bind('<Control-b>', self.blunderCheck)
 
 		# Fonts and Styling
 		# print(font.families())	prints available font families
@@ -169,7 +173,7 @@ class GUI:
 		self.controlFrame = tk.Frame(self.pWindow, bg="green")
 
 		# Button Bar Frame
-		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue", padx=5, pady=5)
+		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue")
 		self.buttonBarFrame.pack(anchor='n', fill='x')
 
 		# variation frame
@@ -177,14 +181,6 @@ class GUI:
 		self.variations.pack(side=tk.LEFT)
 		self.root.bind("<Down>", self.selectVariation)
 		self.root.bind("<Up>", self.selectVariation)
-
-		# Blunder Check Button
-		self.blunderC = tk.Button(self.buttonBarFrame, buttonOptions, text="Blunder Check", command=self.blunderCheck)
-		self.blunderC.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH)
-
-		# Reverse Board Button
-		self.reverseBoardButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Reverse Board", command=self.reverseBoard)
-		self.reverseBoardButton.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH)
 
 		# game score
 		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
@@ -196,8 +192,8 @@ class GUI:
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
 
 		# analysis pane
-		self.analysis = tk.Text(self.controlFrame, height=10)
-		self.analysis.config(wrap=tk.WORD, padx=10, pady=10)
+		self.analysis = tk.Text(self.buttonBarFrame, height=10)
+		self.analysis.config(wrap=tk.WORD)
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 
 		# Add widgets to paned window
@@ -343,6 +339,7 @@ class GUI:
 	def move(self, e, direction):
 		if direction == 'forward':
 			if self.curNode.is_end(): return
+			# gets variation index from variation list box
 			varIdx = self.variations.curselection()[0]
 			self.curNode = self.curNode.variations[varIdx]
 			move = self.curNode.move
