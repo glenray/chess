@@ -172,15 +172,20 @@ class GUI:
 		# Frame for control panel
 		self.controlFrame = tk.Frame(self.pWindow, bg="green")
 
-		# Button Bar Frame
-		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue")
-		self.buttonBarFrame.pack(anchor='n', fill='x')
+		# Analysis Frame
+		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
+		self.analysisFrame.pack(anchor='n', fill='x')
 
-		# variation frame
-		self.variations = tk.Listbox(self.buttonBarFrame, width=20)
+		# variation list box
+		self.variations = tk.Listbox(self.analysisFrame, width=20)
 		self.variations.pack(side=tk.LEFT)
 		self.root.bind("<Down>", self.selectVariation)
 		self.root.bind("<Up>", self.selectVariation)
+
+		# analysis text
+		self.analysis = tk.Text(self.analysisFrame, height=10)
+		self.analysis.config(wrap=tk.WORD)
+		self.analysis.pack(anchor='n', expand=True, fill='both')
 
 		# game score
 		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
@@ -190,11 +195,6 @@ class GUI:
 		self.gameScore.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
 		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
-
-		# analysis pane
-		self.analysis = tk.Text(self.buttonBarFrame, height=10)
-		self.analysis.config(wrap=tk.WORD)
-		self.analysis.pack(anchor='n', expand=True, fill='both')
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, weight=1)
