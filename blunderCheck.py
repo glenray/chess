@@ -1,28 +1,53 @@
 import asyncio
 import chess.pgn
 import chess.engine
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import font
+from tkinter import scrolledtext
+# import pdb
+# pdb.set_trace()
 
-import pdb
-
+'''
+Implements blunder check functionality
+'''
 class blunderCheck():
 	def __init__(self, gui):
 		self.gui = gui
 		self.game = gui.game
-
-	def setGame(self, pgnFile):
-		self.game = chess.pgn.read_game(open(pgnFile))
+		self.engines = {
+			'Stockfish' : "C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe"
+		}
 
 	async def analyzePosition(self, board, depth):
 		asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-		transport, engine = await chess.engine.popen_uci("C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe")
+		transport, engine = await chess.engine.popen_uci(self.engines['Stockfish'])
 		info = await engine.analyse(board, chess.engine.Limit(depth=depth))
 		await engine.quit()
 		return info
 
-	def interGame(self, begMove=1, endMove=None, blunderThresh=50, depth=23):
+	def blunderWin(self):
+		def blunderOff(e):
+			self.gui.isBlunderCheck = False
+			varPop.destroy()
+		varPop = tk.Toplevel(self.gui.root)
+		varPop.title("Blunder Check")
+		varPop.bind("<Escape>", blunderOff)
+		varPop.focus_force()
+
+		label = tk.Label(varPop, text="Blunder Check", pady=10)
+		label.pack()
+
+	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=23):
+		self.blunderWin()
 		node = self.game.variation(0)
 		saveInfo = False
 		while True:
+			# check if blundercheck toogled off
+			if self.gui.isBlunderCheck == False: 
+				print("Blunder Check Terminated")
+				break
+
 			moveNo = node.parent.board().fullmove_number
 			if moveNo<begMove: 
 				node = node.variation(0)
@@ -72,13 +97,3 @@ class blunderCheck():
 			if node.is_end(): break
 			saveInfo = info
 			node = node.variation(0)
-
-
-def main():
-	pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
-	bc = blunderCheck()
-	bc.setGame(pgnFile)
-	bc.interGame()
-
-if __name__ == '__main__':
-	main()

@@ -40,6 +40,9 @@ class GUI:
 		self.game = chess.pgn.read_game(open(self.pgnFile))
 		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
+		# True while blundercheck is running. Setting to False terminates
+		# the blunder check thread
+		self.isBlunderCheck = False
 
 	def setup(self):
 		self.createWidgets()
@@ -51,7 +54,14 @@ class GUI:
 		self.positionSquares()
 		self.grabPieceImages()
 		self.printCurrentBoard()
+		self.printVariations()
 		self.root.mainloop()
+
+	def printVariations(self):
+		for var in self.curNode.variations:
+			b=var.parent.board()
+			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
+			self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
 
 	def setStartPos(self):
 		self.board.reset()
@@ -141,13 +151,17 @@ class GUI:
 		self.buttonBarFrame = tk.Frame(self.controlFrame, bg="blue", padx=5, pady=5)
 		self.buttonBarFrame.pack(anchor='n', fill='x')
 
+		# variation frame
+		self.variations = tk.Listbox(self.buttonBarFrame, width=20)
+		self.variations.pack(side=tk.LEFT)
+
 		# Blunder Check Button
-		self.newGameButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Blunder Check", command=self.blunderCheck)
-		self.newGameButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+		self.blunderC = tk.Button(self.buttonBarFrame, buttonOptions, text="Blunder Check", command=self.blunderCheck)
+		self.blunderC.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH)
 
 		# Reverse Board Button
 		self.reverseBoardButton = tk.Button(self.buttonBarFrame, buttonOptions, text="Reverse Board", command=self.reverseBoard)
-		self.reverseBoardButton.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+		self.reverseBoardButton.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH)
 
 		# game score
 		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
@@ -441,7 +455,10 @@ class GUI:
 		# generate random thread name
 		threadName = "".join(random.choice(string.ascii_letters) for _ in range(10))
 		self.activeEngine = threadName
-		threading.Thread(target=self.__engine, args=(threadName,), daemon=True).start()
+		threading.Thread(
+			target=self.__engine, 
+			args=(threadName,), 
+			daemon=True).start()
 
 	# toggles an engine to analyze the current board position
 	def toggleEngine(self, e):
@@ -452,12 +469,14 @@ class GUI:
 
 	# start blunder check
 	def blunderCheck(self, e=None):
-		bc = blunderCheck(self)
-		# bc.interGame()
-		threading.Thread(
-			target=bc.interGame, 
-			kwargs=dict(depth=10), 
-			daemon=True).start()		
+		# toogle blunder check
+		self.isBlunderCheck = not self.isBlunderCheck
+		if self.isBlunderCheck:
+			bc = blunderCheck(self)
+			threading.Thread(
+				target=bc.blunderChk, 
+				kwargs=dict(depth=10), 
+				daemon=True).start()		
 
 if __name__ == '__main__':
 	g=GUI()
