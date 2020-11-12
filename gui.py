@@ -34,8 +34,8 @@ class GUI:
 		# populated by gameScoreVisitor class
 		self.nodes = []
 		self.curNode = None
-		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
-		# self.pgnFile = 'pgn/Annotated_Games.pgn'
+		# self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
 		self.game = chess.pgn.read_game(open(self.pgnFile))
 		# index of node.variations[index] selected in the variations popup
@@ -57,11 +57,32 @@ class GUI:
 		self.printVariations()
 		self.root.mainloop()
 
+	# insert current variations into the variation list box
 	def printVariations(self):
+		self.variations.delete(0, tk.END)
 		for var in self.curNode.variations:
 			b=var.parent.board()
 			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
 			self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
+			self.variations.selection_set(0)
+
+	# select a variation in the variations listbox using up/down arrows
+	def selectVariation(self, e):
+		curIdx = self.variations.curselection()[0]
+		isBottom = curIdx == len(self.variations.get(0, tk.END))-1
+		isTop = curIdx == 0
+		# Down arrow
+		if e.keycode == 40:
+			if isBottom: return
+			self.variations.selection_clear(0, tk.END)
+			curIdx = curIdx+1
+			self.variations.selection_set(curIdx)
+		# Up arrow
+		elif e.keycode == 38:
+			if isTop: return
+			self.variations.selection_clear(0, tk.END)
+			curIdx = curIdx-1
+			self.variations.selection_set(curIdx)
 
 	def setStartPos(self):
 		self.board.reset()
@@ -154,6 +175,8 @@ class GUI:
 		# variation frame
 		self.variations = tk.Listbox(self.buttonBarFrame, width=20)
 		self.variations.pack(side=tk.LEFT)
+		self.root.bind("<Down>", self.selectVariation)
+		self.root.bind("<Up>", self.selectVariation)
 
 		# Blunder Check Button
 		self.blunderC = tk.Button(self.buttonBarFrame, buttonOptions, text="Blunder Check", command=self.blunderCheck)
@@ -314,52 +337,14 @@ class GUI:
 			ypos += direction
 			xpos = xreset
 
-	# pop up window when variations are encountered
-	def varPopUp(self):
-		def returnVar(e, lb):
-			self.varIdx = lb.curselection()[0]
-			varPop.destroy()
-		# prevent right arrow event on root from advancing to next move
-		# in self.gameScore
-		self.root.unbind('<Right>')
-		# popup Window
-		varPop = tk.Toplevel(self.root)
-		varPop.title("Variations")
-		varPop.bind("<Escape>", lambda e: returnVar(e, lb))
-		varPop.bind("<Right>", lambda e: returnVar(e, lb))
-		# Label
-		label = tk.Label(varPop, text="Variations", pady=10)
-		label.pack()
-		# variations list box
-		lb = tk.Listbox(varPop)
-		for var in self.curNode.variations:
-			b=var.parent.board()
-			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
-			lb.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
-		lb.pack()
-		lb.focus_force()
-		lb.selection_set(0)
-		# pause main_loop until varPop finishes
-		self.root.wait_window(varPop)
-		# Re-bind right arrow key to root for move navigation
-		self.root.bind('<Right>', lambda e: self.move(e, 'forward'))
-
-	# If mainline has alternative variations, popup a variation window
-	# to select the desired variation.
-	def varWindow(self):
-		if len(self.curNode.variations)>1:
-			varIdx = self.varPopUp()
-			return self.curNode.variations[self.varIdx]
-		else:
-			return self.curNode.variations[0]
-
 	''' Event bindings '''
 	# Updates GUI after moving though game nodes both directions
 	# bound to left and right arrow keys at root
 	def move(self, e, direction):
 		if direction == 'forward':
 			if self.curNode.is_end(): return
-			self.curNode = self.varWindow()
+			varIdx = self.variations.curselection()[0]
+			self.curNode = self.curNode.variations[varIdx]
 			move = self.curNode.move
 			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
 					isPromotion) = self.testMoveProperties(move)
@@ -385,6 +370,7 @@ class GUI:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 		self.updateGameScore()
+		self.printVariations()
 		if self.activeEngine != None:
 			self.spawnEngine()
 
