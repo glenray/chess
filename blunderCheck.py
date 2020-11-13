@@ -101,9 +101,14 @@ class blunderCheck():
 				self.blText.insert('end', moveTxt+"\n")
 			self.blText.see('end')
 
+			# update the GUI with the new game and quit
 			if node.is_end(): 
+				self.gui.curNode = self.gui.nodes[0]
 				self.gui.game = node.game()
 				self.gui.game.accept(gameScoreVisitor(self.gui))
+				self.gui.printCurrentBoard()
+				self.gui.printVariations()
+				self.blWindow.destroy()	
 				break
 			else:
 				saveInfo = info
