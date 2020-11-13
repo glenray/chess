@@ -34,10 +34,12 @@ class GUI:
 		# populated by gameScoreVisitor class
 		self.nodes = []
 		self.curNode = None
-		# self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
-		self.pgnFile = 'pgn/Annotated_Games.pgn'
+		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		# self.pgnFile = 'output.pgn'
+		# self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
-		self.game = chess.pgn.read_game(open(self.pgnFile))
+		file = open(self.pgnFile, encoding='latin-1')
+		self.game = chess.pgn.read_game(file)
 		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
 		# True while blundercheck is running. Setting to False terminates
@@ -46,10 +48,9 @@ class GUI:
 
 	def setup(self):
 		self.createWidgets()
-		# sets the game score and populate the self.nodes list
+		# sets the game score text, populates the self.nodes list
+		# and sets self.currNode = self.nodes[0], i.e. begin of game
 		self.game.accept(gameScoreVisitor(self))
-		# current node set before the first move.
-		self.curNode = self.nodes[0]
 		self.createSquares()
 		self.positionSquares()
 		self.grabPieceImages()

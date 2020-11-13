@@ -1,4 +1,5 @@
 from chess.pgn import BaseVisitor
+import pdb
 
 '''
 Called to populate gui.gameScore text widget with the game score,
@@ -6,6 +7,7 @@ including all variations and comments.
 '''
 class gameScoreVisitor(BaseVisitor):
 	def __init__(self, gui):
+		# pdb.set_trace()
 		self.startsVariation = False
 		self.endsVariation = False
 		self.gui = gui
@@ -16,9 +18,11 @@ class gameScoreVisitor(BaseVisitor):
 		# the first node is the root, i.e. start position
 		self.gui.nodes = [self.currentNode]
 
+
 	def end_headers(self):
 		gs = self.gui.gameScore
 		gs.config(state='normal')
+		self.gui.gameScore.delete('1.0', 'end')
 		g=self.gui.game.headers
 		whiteElo = f" ({g['WhiteElo']})" if 'WhiteElo' in g else ''
 		blackElo = f" ({g['BlackElo']})" if 'BlackElo' in g else ''
@@ -33,7 +37,9 @@ class gameScoreVisitor(BaseVisitor):
 		if self.endsVariation:
 			self.endsVariation = False
 			self.currentNode = self.varStack.pop()
-			gs.insert("end", ")")
+			# delete last space after last move in variation
+			gs.delete('end-2 chars')
+			gs.insert("end", ") ")
 
 		if self.startsVariation:
 			self.startsVariation = False
@@ -62,3 +68,4 @@ class gameScoreVisitor(BaseVisitor):
 
 	def result(self):
 		self.gui.gameScore.config(state='disabled')
+		self.gui.curNode = self.gui.nodes[0]

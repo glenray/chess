@@ -1,11 +1,13 @@
 import asyncio
 import chess.pgn
 import chess.engine
+# import copy
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 from tkinter import scrolledtext
-# import pdb
+from gameScoreVisitor import gameScoreVisitor
+import pdb
 # pdb.set_trace()
 
 '''
@@ -29,17 +31,21 @@ class blunderCheck():
 	def blunderWin(self):
 		def blunderOff(e):
 			self.gui.isBlunderCheck = False
-			varPop.destroy()
-		varPop = tk.Toplevel(self.gui.root)
-		varPop.title("Blunder Check")
-		varPop.bind("<Escape>", blunderOff)
-		varPop.focus_force()
+			self.blWindow.destroy()
+		self.blWindow = tk.Toplevel(self.gui.root)
+		self.blWindow.title("Blunder Check")
+		self.blWindow.bind("<Escape>", blunderOff)
+		self.blWindow.focus_force()
 
-		label = tk.Label(varPop, text="Blunder Check", pady=10)
-		label.pack()
+		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10)
+		self.label.pack()
+
+		self.blText = tk.Text(self.blWindow, width=80)
+		self.blText.pack()
 
 	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=23):
 		self.blunderWin()
+		# node = copy.deepcopy(self.game.variation(0))
 		node = self.game.variation(0)
 		saveInfo = False
 		while True:
@@ -72,7 +78,10 @@ class blunderCheck():
 			blunderMargin = None if isBestMate or isActualMate else bestScore.score()-actualScore.score()
 			moveTxt = f"{moveNo}.{node.san()} " if onMove else f"{moveNo}...{node.san()}"
 
-			if isBestMate and not isActualMate:
+			# if the move made == the move predicted, it's not a blunder.
+			if saveInfo['pv'][0] == node.move:
+				isBlunder = False
+			elif isBestMate and not isActualMate:
 				isBlunder = True
 				blunderWarning = f"{moveTxt} was a blunder: {txtOnMove} missed mate in {bestScore.mate()}"
 			elif not isBestMate and isActualMate:
@@ -80,20 +89,23 @@ class blunderCheck():
 				blunderWarning = f"{moveTxt} was a blunder: {txtOnMove} allows mate in {abs(actualScore.mate())}. Better is {parentBoard.san(saveInfo['pv'][0])} ({bestScore.score()})"
 			elif blunderMargin and (abs(blunderMargin) > blunderThresh):
 				isBlunder = True
-				blunderWarning = f"{moveTxt} ({actualScore.score()/100}) was a blunder: {blunderMargin/100} pawns. Better is {parentBoard.san(saveInfo['pv'][0])} ({bestScore.score()/100})"
+				blunderWarning = f"Blunders {blunderMargin/100} pawns. Predicted move: {parentBoard.san(saveInfo['pv'][0])} ({bestScore.score()/100})"
 			else:
 				isBlunder = False
 				blunderWarning = ''
 
-			# Regardless of score, it's not a blunder if the best move and the actual move are the same.
-			if saveInfo['pv'][1] == info['pv'][0]:
-				isBlunder = False
-
 			if isBlunder:
-				print(blunderWarning)
+				line = node.parent.add_line(saveInfo['pv'], starting_comment=blunderWarning)
+				self.blText.insert('end', blunderWarning+"\n\n")
 			else:
-				print(moveTxt)
+				self.blText.insert('end', moveTxt+"\n")
+			self.blText.see('end')
 
-			if node.is_end(): break
-			saveInfo = info
-			node = node.variation(0)
+			if node.is_end(): 
+				self.gui.game = node.game()
+				self.gui.game.accept(gameScoreVisitor(self.gui))
+				break
+			else:
+				saveInfo = info
+				node = node.variation(0)
+	
