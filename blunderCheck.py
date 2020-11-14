@@ -1,7 +1,7 @@
 import asyncio
 import chess.pgn
 import chess.engine
-# import copy
+import copy
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
@@ -29,29 +29,36 @@ class blunderCheck():
 		return info
 
 	def blunderWin(self):
-		def blunderOff(e):
+		def blunderOff(e=None):
 			self.gui.isBlunderCheck = False
-			self.blWindow.destroy()
 		self.blWindow = tk.Toplevel(self.gui.root)
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
+		# make window modal
+		self.blWindow.grab_set()
 
 		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10)
 		self.label.pack()
 
 		self.blText = tk.Text(self.blWindow, width=80)
-		self.blText.pack()
+		self.blText.pack(anchor='n', expand=True, fill='both')
+
+		self.buttonFrame = tk.Frame(self.blWindow)
+		self.buttonFrame.pack(fill='x')
+
+		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
+		self.cancelButton.pack(anchor='w')
 
 	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=23):
 		self.blunderWin()
-		# node = copy.deepcopy(self.game.variation(0))
-		node = self.game.variation(0)
+		node = copy.deepcopy(self.game.variation(0))
 		saveInfo = False
 		while True:
 			# check if blundercheck toogled off
 			if self.gui.isBlunderCheck == False: 
 				print("Blunder Check Terminated")
+				self.blWindow.destroy()
 				return
 
 			moveNo = node.parent.board().fullmove_number

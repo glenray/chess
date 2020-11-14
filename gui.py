@@ -469,7 +469,7 @@ class GUI:
 			bc = blunderCheck(self)
 			threading.Thread(
 				target=bc.blunderChk, 
-				kwargs=dict(depth=25, blunderThresh=50),
+				kwargs=dict(depth=20, blunderThresh=50),
 				daemon=True).start()		
 
 if __name__ == '__main__':
