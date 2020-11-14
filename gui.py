@@ -171,7 +171,7 @@ class GUI:
 		self.canvas.pack()
 
 		# Frame for control panel
-		self.controlFrame = tk.Frame(self.pWindow, bg="green")
+		self.controlFrame = tk.Frame(self.pWindow)
 
 		# Analysis Frame
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
@@ -451,6 +451,16 @@ class GUI:
 		else:
 			self.activeEngine = None
 
+	def blunderUpdate(self, game):
+		self.curNode = self.nodes[0]
+		self.game = game
+		# populating the text widget is wicked slow if it's visible
+		self.gameScore.pack_forget()
+		self.game.accept(gameScoreVisitor(self))
+		self.gameScore.pack(anchor='n', expand=True, fill='both')
+		self.printCurrentBoard()
+		self.printVariations()
+
 	# start blunder check
 	def blunderCheck(self, e=None):
 		# toogle blunder check
@@ -459,7 +469,7 @@ class GUI:
 			bc = blunderCheck(self)
 			threading.Thread(
 				target=bc.blunderChk, 
-				kwargs=dict(depth=10), 
+				kwargs=dict(depth=25, blunderThresh=50),
 				daemon=True).start()		
 
 if __name__ == '__main__':

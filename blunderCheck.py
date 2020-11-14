@@ -52,7 +52,7 @@ class blunderCheck():
 			# check if blundercheck toogled off
 			if self.gui.isBlunderCheck == False: 
 				print("Blunder Check Terminated")
-				break
+				return
 
 			moveNo = node.parent.board().fullmove_number
 			if moveNo<begMove: 
@@ -96,21 +96,17 @@ class blunderCheck():
 
 			if isBlunder:
 				line = node.parent.add_line(saveInfo['pv'], starting_comment=blunderWarning)
-				self.blText.insert('end', blunderWarning+"\n\n")
+				self.blText.insert('end', f"{moveTxt} {blunderWarning}\n")
 			else:
 				self.blText.insert('end', moveTxt+"\n")
 			self.blText.see('end')
 
 			# update the GUI with the new game and quit
 			if node.is_end(): 
-				self.gui.curNode = self.gui.nodes[0]
-				self.gui.game = node.game()
-				self.gui.game.accept(gameScoreVisitor(self.gui))
-				self.gui.printCurrentBoard()
-				self.gui.printVariations()
-				self.blWindow.destroy()	
 				break
 			else:
 				saveInfo = info
 				node = node.variation(0)
-	
+		# after breaking ot of loop, 
+		self.blWindow.destroy()
+		self.gui.blunderUpdate(node.game())

@@ -69,4 +69,3 @@ class gameScoreVisitor(BaseVisitor):
 	def result(self):
 		self.gui.gameScore.config(state='disabled')
 		self.gui.curNode = self.gui.nodes[0]
-		self.gui.printVariations()
