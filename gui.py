@@ -467,10 +467,7 @@ class GUI:
 		self.isBlunderCheck = not self.isBlunderCheck
 		if self.isBlunderCheck:
 			bc = blunderCheck(self)
-			threading.Thread(
-				target=bc.blunderChk, 
-				kwargs=dict(depth=20, blunderThresh=50),
-				daemon=True).start()		
+			bc.blunderWin()
 
 if __name__ == '__main__':
 	g=GUI()

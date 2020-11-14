@@ -2,6 +2,7 @@ import asyncio
 import chess.pgn
 import chess.engine
 import copy
+import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
@@ -29,29 +30,58 @@ class blunderCheck():
 		return info
 
 	def blunderWin(self):
+		# Cancel button
 		def blunderOff(e=None):
 			self.gui.isBlunderCheck = False
+			# if the blunder checker is not running, then destroy to window
+			# returning contol to root
+			# otherwise, the blunderChk method will destroy the window after terminating the thread.
+			threadNames = [thread.name for thread in threading.enumerate()]
+			if ("Blunder Checker" in threadNames) == False:
+				self.blWindow.destroy()
+
+		labelFont = font.Font(family="Tahoma", size=16)
+		buttonFont = font.Font(family="Tahoma", size=12)
+		textFont = font.Font(family="Courier", size=14)
+
+		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
+		labelOptions = {"pady": 10, "font": labelFont}
+
 		self.blWindow = tk.Toplevel(self.gui.root)
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
 		# make window modal
 		self.blWindow.grab_set()
+		self.blWindow.grid_columnconfigure(0, weight=1)
+		self.blWindow.grid_columnconfigure(1, weight=0)
 
-		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10)
-		self.label.pack()
+		self.label = tk.Label(self.blWindow, text="Blunder Check")
+		self.label.configure(labelOptions)
+		self.label.grid(row=0, column=0)
 
-		self.blText = tk.Text(self.blWindow, width=80)
-		self.blText.pack(anchor='n', expand=True, fill='both')
+		self.blText = tk.Text(self.blWindow, width=80, font=textFont, padx=10, pady=5)
+		self.blText.grid(row=1, column=0, sticky='nsew', padx=10)
 
 		self.buttonFrame = tk.Frame(self.blWindow)
-		self.buttonFrame.pack(fill='x')
+		self.buttonFrame.grid(row=2, column=0)
 
 		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
-		self.cancelButton.pack(anchor='w')
+		self.cancelButton.configure(buttonOptions)
+		self.cancelButton.grid(row=0, column=1, padx=5, pady=5)
 
-	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=23):
-		self.blunderWin()
+		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.start)
+		self.runButton.configure(buttonOptions)
+		self.runButton.grid(row=0, column=0, padx=5, pady=5)
+
+	def start(self):
+		threading.Thread(
+			target=self.blunderChk, 
+			kwargs=dict(depth=5, blunderThresh=50),
+			name="Blunder Checker",
+			daemon=True).start()
+
+	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=5):
 		node = copy.deepcopy(self.game.variation(0))
 		saveInfo = False
 		while True:
