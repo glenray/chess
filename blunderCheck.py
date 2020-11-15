@@ -36,8 +36,7 @@ class blunderCheck():
 			# if the blunder checker is not running, then destroy to window
 			# returning contol to root
 			# otherwise, the blunderChk method will destroy the window after terminating the thread.
-			threadNames = [thread.name for thread in threading.enumerate()]
-			if ("Blunder Checker" in threadNames) == False:
+			if ("Blunder Checker" in [t.name for t in threading.enumerate()]) == False:
 				self.blWindow.destroy()
 
 		labelFont = font.Font(family="Tahoma", size=16)
@@ -55,6 +54,7 @@ class blunderCheck():
 		self.blWindow.grab_set()
 		self.blWindow.grid_columnconfigure(0, weight=1)
 		self.blWindow.grid_columnconfigure(1, weight=0)
+		# self.blWindow.bind('<Return>', self.start)
 
 		self.label = tk.Label(self.blWindow, text="Blunder Check")
 		self.label.configure(labelOptions)
@@ -73,8 +73,10 @@ class blunderCheck():
 		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.start)
 		self.runButton.configure(buttonOptions)
 		self.runButton.grid(row=0, column=0, padx=5, pady=5)
+		self.runButton.focus()
 
-	def start(self):
+	def start(self, e=None):
+		self.runButton.configure(state='disabled')
 		threading.Thread(
 			target=self.blunderChk, 
 			kwargs=dict(depth=5, blunderThresh=50),
