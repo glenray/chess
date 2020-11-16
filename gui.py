@@ -451,16 +451,6 @@ class GUI:
 		else:
 			self.activeEngine = None
 
-	def blunderUpdate(self, game):
-		self.curNode = self.nodes[0]
-		self.game = game
-		# populating the text widget is wicked slow if it's visible
-		self.gameScore.pack_forget()
-		self.game.accept(gameScoreVisitor(self))
-		self.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.printCurrentBoard()
-		self.printVariations()
-
 	# start blunder check
 	def blunderCheck(self, e=None):
 		# toogle blunder check

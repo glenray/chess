@@ -1,4 +1,3 @@
-import asyncio
 import chess.pgn
 import chess.engine
 import copy
@@ -22,21 +21,21 @@ class blunderCheck():
 			'Stockfish' : "C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe"
 		}
 
-	async def analyzePosition(self, board, depth):
-		asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-		transport, engine = await chess.engine.popen_uci(self.engines['Stockfish'])
-		info = await engine.analyse(board, chess.engine.Limit(depth=depth))
-		await engine.quit()
+	def analyzePosition(self, board, limit):
+		engine=chess.engine.SimpleEngine.popen_uci(self.engines['Stockfish'])
+		info = engine.analyse(board, limit)
+		engine.quit()
 		return info
 
 	def blunderWin(self):
 		# Cancel button
 		def blunderOff(e=None):
 			self.gui.isBlunderCheck = False
-			# if the blunder checker is not running, then destroy to window
+			# if the blunder checker is not running, then destroy the window,
 			# returning contol to root
 			# otherwise, the blunderChk method will destroy the window after terminating the thread.
-			if ("Blunder Checker" in [t.name for t in threading.enumerate()]) == False:
+			threadNames = [t.name for t in threading.enumerate()]
+			if ("Blunder Checker" in threadNames) == False:
 				self.blWindow.destroy()
 
 		labelFont = font.Font(family="Tahoma", size=16)
@@ -64,47 +63,62 @@ class blunderCheck():
 		self.blText.grid(row=1, column=0, sticky='nsew', padx=10)
 
 		self.buttonFrame = tk.Frame(self.blWindow)
-		self.buttonFrame.grid(row=2, column=0)
+		self.buttonFrame.grid(row=2, column=0, sticky='nsew')
+		self.buttonFrame.columnconfigure(0, weight=1)
+		self.buttonFrame.columnconfigure(1, weight=1)
+		self.buttonFrame.rowconfigure(0, weight=1)
+
+		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.openBlCheck)
+		self.runButton.configure(buttonOptions)
+		self.runButton.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
+		self.runButton.focus()
 
 		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
 		self.cancelButton.configure(buttonOptions)
-		self.cancelButton.grid(row=0, column=1, padx=5, pady=5)
+		self.cancelButton.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.start)
-		self.runButton.configure(buttonOptions)
-		self.runButton.grid(row=0, column=0, padx=5, pady=5)
-		self.runButton.focus()
+		# self.runButton.rowconfigure(, weight=1)
 
-	def start(self, e=None):
+	def openBlCheck(self, e=None):
 		self.runButton.configure(state='disabled')
 		threading.Thread(
 			target=self.blunderChk, 
-			kwargs=dict(depth=5, blunderThresh=50),
+			kwargs=dict(depth=15, blunderThresh=50),
 			name="Blunder Checker",
 			daemon=True).start()
 
-	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=5):
-		node = copy.deepcopy(self.game.variation(0))
+	# runs in a separate thread
+	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=5, time=None):
+		# set engin limit based on time and depth
+		# time takes precedence if set
+		if time == None:
+			assert depth, "Time or Depth must be specified"
+			limit = chess.engine.Limit(depth=depth)
+		else:
+			assert time, "Time or Depth must be specified"
+			limit = chess.engine.Limit(time=time)
+		game = copy.deepcopy(self.game)
 		saveInfo = False
-		while True:
-			# check if blundercheck toogled off
+		# loop through mainline nodes
+		for node in game.mainline():
 			if self.gui.isBlunderCheck == False: 
 				print("Blunder Check Terminated")
 				self.blWindow.destroy()
 				return
 
 			moveNo = node.parent.board().fullmove_number
+			# skip to next move if before begMove
 			if moveNo<begMove: 
 				node = node.variation(0)
 				continue
+			# terminate loop if after endMove
 			if endMove != None and moveNo>endMove: break
 
 			board = node.board()
-			info = asyncio.run(self.analyzePosition(board, depth))
-
+			info = self.analyzePosition(board, limit)
 			# on first move, analyze the move before to get bestScore for the move
 			if saveInfo == False:
-				saveInfo = asyncio.run(self.analyzePosition(node.parent.board(), depth))
+				saveInfo = self.analyzePosition(node.parent.board(), limit)
 
 			parentBoard = node.parent.board()
 			onMove = parentBoard.turn
@@ -140,12 +154,18 @@ class blunderCheck():
 				self.blText.insert('end', moveTxt+"\n")
 			self.blText.see('end')
 
-			# update the GUI with the new game and quit
-			if node.is_end(): 
-				break
-			else:
-				saveInfo = info
-				node = node.variation(0)
-		# after breaking ot of loop, 
+			saveInfo = info
+		# after breaking out of loop, 
+		self.updateGUI(node.game())
+
+	# after blundercheck has complete update gui and internal variables
+	def updateGUI(self, game):
+		self.gui.curNode = self.gui.nodes[0]
+		self.gui.game = game
+		# populating the text widget is wicked slow if it's visible
+		self.gui.gameScore.pack_forget()
+		self.gui.game.accept(gameScoreVisitor(self.gui))
+		self.gui.gameScore.pack(anchor='n', expand=True, fill='both')
+		self.gui.printCurrentBoard()
+		self.gui.printVariations()
 		self.blWindow.destroy()
-		self.gui.blunderUpdate(node.game())
