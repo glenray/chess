@@ -151,7 +151,8 @@ class GUI:
 		self.root.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.root.bind('<Control-r>', self.reverseBoard)
 		self.root.bind('<Control-e>', self.toggleEngine)
-		self.root.bind('<Control-b>', self.blunderCheck)
+		# launch a blunder check class instance
+		self.root.bind('<Control-b>', lambda e: blunderCheck(self))
 
 		# Fonts and Styling
 		# print(font.families())	prints available font families
@@ -399,6 +400,7 @@ class GUI:
 		self.positionSquares()
 		self.printCurrentBoard()
 
+	# changes the cursor when hovering over a move in the game score
 	def cursorMove(self, status):
 		if status == 'leave':
 			self.gameScore.config(cursor='')
@@ -411,10 +413,6 @@ class GUI:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
-
-	# start blunder check
-	def blunderCheck(self, e=None):
-		blunderCheck(self)
 
 if __name__ == '__main__':
 	g=GUI()
