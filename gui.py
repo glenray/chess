@@ -42,9 +42,8 @@ class GUI:
 		self.game = chess.pgn.read_game(file)
 		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
-		# True while blundercheck is running. Setting to False terminates
-		# the blunder check thread
-		self.isBlunderCheck = False
+		# The randomly generated name of any active blundercheck thread
+		self.activeBlunderCheck = None
 
 	def setup(self):
 		self.createWidgets()
@@ -455,10 +454,8 @@ class GUI:
 	# start blunder check
 	def blunderCheck(self, e=None):
 		# toogle blunder check
-		self.isBlunderCheck = not self.isBlunderCheck
-		if self.isBlunderCheck:
-			bc = blunderCheck(self)
-			bc.blunderWin()
+		bc = blunderCheck(self)
+		bc.blunderWin()
 
 if __name__ == '__main__':
 	g=GUI()

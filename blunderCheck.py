@@ -1,3 +1,5 @@
+import random
+import string
 import chess.pgn
 import chess.engine
 import copy
@@ -35,15 +37,10 @@ class blunderCheck():
 		return info
 
 	def blunderWin(self):
-		# Cancel button
+		# Cancel button, Escape key, or x to close the window
 		def blunderOff(e=None):
-			self.gui.isBlunderCheck = False
-			# if the blunder checker is not running, then destroy the window,
-			# returning contol to root
-			# otherwise, the blunderChk method will destroy the window after terminating the thread.
-			threadNames = [t.name for t in threading.enumerate()]
-			if ("Blunder Checker" in threadNames) == False:
-				self.blWindow.destroy()
+			self.gui.activeBlunderCheck = None
+			self.blWindow.destroy()
 
 		# tk variables
 		# limit type from radio button, either depth or time
@@ -63,6 +60,8 @@ class blunderCheck():
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
+		# exit gracefully when window is closed by clicking x
+		self.blWindow.protocol("WM_DELETE_WINDOW", blunderOff)
 		# make window modal
 		self.blWindow.grab_set()
 		# Window Title
@@ -128,6 +127,7 @@ class blunderCheck():
 
 	def openBlCheck(self, e=None):
 		self.runButton.configure(state='disabled')
+		self.gui.activeBlunderCheck = "".join(random.choice(string.ascii_letters) for _ in range(10))
 		limitVal = self.limitVal.get()
 		thresh = self.threshEntry.get()
 		begMove = self.begMoveEntry.get()
@@ -138,7 +138,12 @@ class blunderCheck():
 		begMove = int(begMove) if self.isInteger(begMove) else 1
 		endMove = int(endMove) if self.isInteger(endMove) else None
 
-		kwargs = {"blunderThresh":thresh, 'begMove':begMove, 'endMove':endMove}
+		kwargs = {
+			'threadName':self.gui.activeBlunderCheck,
+			"blunderThresh":thresh, 
+			'begMove':begMove, 
+			'endMove':endMove
+		}
 		if self.limitType.get()=="depth":
 			kwargs['depth'] = limitVal
 		else:
@@ -159,7 +164,7 @@ class blunderCheck():
 			return float(n).is_integer()
 
 	# runs in a separate thread
-	def blunderChk(self, begMove=1, endMove=None, blunderThresh=50, depth=5, time=None):
+	def blunderChk(self, threadName, begMove=1, endMove=None, blunderThresh=50, depth=5, time=None):
 		# set engin limit based on time and depth
 		# time takes precedence if set
 		if time == None:
@@ -172,11 +177,6 @@ class blunderCheck():
 		saveInfo = False
 		# loop through mainline nodes
 		for node in game.mainline():
-			if self.gui.isBlunderCheck == False: 
-				print("Blunder Check Terminated")
-				self.blWindow.destroy()
-				return
-
 			moveNo = node.parent.board().fullmove_number
 			# skip to next move if before begMove
 			if moveNo<begMove: 
@@ -190,6 +190,11 @@ class blunderCheck():
 			# on first move, analyze the move before to get bestScore for the move
 			if saveInfo == False:
 				saveInfo = self.analyzePosition(node.parent.board(), limit)
+
+			# quit if blunder check has been turned off
+			if self.gui.activeBlunderCheck != threadName: 
+				print(f"Blunder Check {threadName} Terminated")
+				return
 
 			parentBoard = node.parent.board()
 			onMove = parentBoard.turn
