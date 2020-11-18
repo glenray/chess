@@ -9,8 +9,6 @@ import tkinter.ttk as ttk
 from tkinter import font
 from tkinter import scrolledtext
 from gameScoreVisitor import gameScoreVisitor
-import pdb
-# pdb.set_trace()
 
 '''
 Implements blunder check functionality
@@ -29,6 +27,7 @@ class blunderCheck():
 			'begMove'	: '1',
 			'endMove'	: ''
 		}
+		self.blunderWin()
 
 	def analyzePosition(self, board, limit):
 		engine=chess.engine.SimpleEngine.popen_uci(self.engines['Stockfish'])
@@ -36,6 +35,7 @@ class blunderCheck():
 		engine.quit()
 		return info
 
+	# define and activate blunder check window
 	def blunderWin(self):
 		# Cancel button, Escape key, or x to close the window
 		def blunderOff(e=None):
@@ -125,6 +125,7 @@ class blunderCheck():
 		text = "Depth in Ply" if self.limitType.get()=="depth" else "Time in Seconds"
 		self.limitValLbl.configure(text=text)
 
+	# Spawns blunder check thread
 	def openBlCheck(self, e=None):
 		self.runButton.configure(state='disabled')
 		self.gui.activeBlunderCheck = "".join(random.choice(string.ascii_letters) for _ in range(10))
@@ -240,7 +241,7 @@ class blunderCheck():
 		# after breaking out of loop, 
 		self.updateGUI(node.game())
 
-	# after blundercheck has complete update gui and internal variables
+	# after blundercheck completes, update gui before exit
 	def updateGUI(self, game):
 		self.gui.curNode = self.gui.nodes[0]
 		self.gui.game = game

@@ -11,6 +11,7 @@ from sqCanvas import sqCanvas
 from sqCanvas import strings
 from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
+from infiniteAnalysis import infiniteAnalysis
 
 import pdb
 
@@ -200,7 +201,6 @@ class GUI:
 		self.pWindow.add(self.boardFrame)
 		self.pWindow.add(self.controlFrame)
 
-
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
 		moveIndices = []
@@ -220,7 +220,7 @@ class GUI:
 		self.printCurrentBoard()
 		self.updateGameScore()
 		if self.activeEngine != None:
-			self.spawnEngine()
+			infiniteAnalysis(self)
 
 	'''
 	Move a piece from on sq to another
@@ -370,7 +370,7 @@ class GUI:
 		self.updateGameScore()
 		self.printVariations()
 		if self.activeEngine != None:
-			self.spawnEngine()
+			infiniteAnalysis(self)
 
 	# emphasize current move in game score
 	def updateGameScore(self):
@@ -405,57 +405,16 @@ class GUI:
 		elif status == 'enter':
 			self.gameScore.config(cursor='hand2')
 
-	# Engine analyzing the current board
-	# This is always run in a separate thread by self.spawnEngine()
-	# tName str name of the thread
-	# The thread running this engine will quit if it is no longer named
-	# as the active engine in self.activeEngine
-	def __engine(self, tName):
-		print(f"Engine {tName} On.")
-		engine = chess.engine.SimpleEngine.popen_uci("C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe")
-		with engine.analysis(self.board) as analysis:
-			for info in analysis:
-				# if this is no longer the active engine, quit thread
-				if self.activeEngine != tName:
-					print(f"Engine {tName} Off.")
-					break
-
-				pv = info.get('pv')
-				if pv != None and (len(pv) > 5 or info.get("score").is_mate()):
-					output = strings['permAnalysis'].format(
-						score = info.get("score").white(),
-						depth = info.get('depth'),
-						nps = info.get('nps'),
-						nodes = info.get('nodes'),
-						time = info.get('time'),
-						pvString = self.board.variation_san(pv)	
-					)
-					self.analysis.delete('0.0', 'end')
-					self.analysis.insert("0.1", output)
-		engine.quit()
-
-	# spawn a new engine thread when self.board changes 
-	def spawnEngine(self):
-		# generate random thread name
-		threadName = "".join(random.choice(string.ascii_letters) for _ in range(10))
-		self.activeEngine = threadName
-		threading.Thread(
-			target=self.__engine, 
-			args=(threadName,), 
-			daemon=True).start()
-
 	# toggles an engine to analyze the current board position
 	def toggleEngine(self, e):
 		if self.activeEngine == None:
-			self.spawnEngine()
+			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
 
 	# start blunder check
 	def blunderCheck(self, e=None):
-		# toogle blunder check
-		bc = blunderCheck(self)
-		bc.blunderWin()
+		blunderCheck(self)
 
 if __name__ == '__main__':
 	g=GUI()
