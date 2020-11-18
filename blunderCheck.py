@@ -193,7 +193,7 @@ class blunderCheck():
 
 			# quit if blunder check has been turned off
 			if self.gui.activeBlunderCheck != threadName: 
-				print(f"Blunder Check {threadName} Terminated")
+				print(f"Blunder Check {threadName} Cancelled")
 				return
 
 			parentBoard = node.parent.board()
