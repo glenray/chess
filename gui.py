@@ -159,7 +159,7 @@ class GUI:
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'groove', "font":buttonFont}
 
 		# Paned Window
-		self.pWindow = ttk.PanedWindow(self.root, orient="horizontal")
+		self.pWindow = tk.PanedWindow(self.root, orient="horizontal", sashwidth=10, sashrelief='raised')
 		self.pWindow.pack(fill="both", expand=1)
 
 		# Frame container for board canvas
@@ -198,8 +198,9 @@ class GUI:
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
 
 		# Add widgets to paned window
-		self.pWindow.add(self.boardFrame, weight=1)
-		self.pWindow.add(self.controlFrame, weight=1)
+		self.pWindow.add(self.boardFrame)
+		self.pWindow.add(self.controlFrame)
+
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):

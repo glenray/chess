@@ -50,7 +50,6 @@ class blunderCheck():
 		textFont = font.Font(family="Courier", size=14)
 
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
-		titleOptions = {"pady": 10, "font": labelFont}
 
 		self.blWindow = tk.Toplevel(self.gui.root)
 		self.blWindow.title("Blunder Check")
@@ -58,65 +57,73 @@ class blunderCheck():
 		self.blWindow.focus_force()
 		# make window modal
 		self.blWindow.grab_set()
-		self.blWindow.grid_columnconfigure(0, weight=1)
-		self.blWindow.grid_columnconfigure(1, weight=2)
-		self.blWindow.grid_columnconfigure(2, weight=3)
+
+		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10, font=labelFont)
+		self.label.grid(row=0, column=0, columnspan=2)
 
 		self.blText = tk.Text(self.blWindow, width=80, font=textFont, padx=10, pady=5)
 		self.blText.grid(row=1, column=0, columnspan=2, sticky='nsew', padx=10)
 
-		self.label = tk.Label(self.blWindow, text="Blunder Check")
-		self.label.configure(titleOptions)
-		self.label.grid(row=0, column=0, columnspan=2)
-
+		# Buttons
 		self.buttonFrame = tk.Frame(self.blWindow)
-		self.buttonFrame.columnconfigure(0, weight=0)
 		self.buttonFrame.grid(row=2, column=0, sticky='nsew')
-
-		self.settingFrame = tk.Frame(self.blWindow)
-		self.settingFrame.columnconfigure(1, weight=1)
-		self.settingFrame.columnconfigure(2, weight=2)
-		self.settingFrame.grid(row=2, column=1, sticky='nsew')
-
-
+		# run
 		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.openBlCheck)
 		self.runButton.configure(buttonOptions)
-		self.runButton.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
+		self.runButton.pack(side='left', padx=10)
 		self.runButton.focus()
-
+		# cancel
 		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
 		self.cancelButton.configure(buttonOptions)
-		self.cancelButton.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
+		self.cancelButton.pack(side='left', padx=10)
 
-		self.depthLabel = tk.Label(self.settingFrame, text="Depth")
-		self.depthLabel.grid(row=0, column=1, sticky='e')
-		self.depthEntry = tk.Entry(self.settingFrame)
-		self.depthEntry.grid(row=0, column=2, sticky='w')
-		self.depthEntry.insert('0', self.defaults['depth'])
+		self.limitType=tk.StringVar()
+		self.limitValue = tk.IntVar()
+		self.limitType.set("time")
+		self.limitValue.set(42)
 
-		self.timeLabel = tk.Label(self.settingFrame, text="Time")
-		self.timeLabel.grid(row=1, column=1, sticky='e')
-		self.timeEntry = tk.Entry(self.settingFrame)
-		self.timeEntry.grid(row=1, column=2, sticky='w')
-		self.timeEntry.insert('0', self.defaults['time'])
+		self.settingFrame = tk.Frame(self.blWindow)
+		self.settingFrame.columnconfigure(0, minsize=100)
+		self.settingFrame.grid(row=2, column=1, sticky='nsew')
 
 		self.threshLabel = tk.Label(self.settingFrame, text="Threshold")
-		self.threshLabel.grid(row=2, column=1, sticky='e')
+		self.threshLabel.grid(row=0, column=0, sticky='w')
 		self.threshEntry = tk.Entry(self.settingFrame)
-		self.threshEntry.grid(row=2, column=2, sticky='w')
+		self.threshEntry.grid(row=0, column=1, sticky='w')
 		self.threshEntry.insert('0', self.defaults['threshold'])
 
 		self.begMoveLabel = tk.Label(self.settingFrame, text="Begin Move")
-		self.begMoveLabel.grid(row=3, column=1, sticky='e')
+		self.begMoveLabel.grid(row=1, column=0, sticky='w')
 		self.begMoveEntry = tk.Entry(self.settingFrame)
-		self.begMoveEntry.grid(row=3, column=2, sticky='w')
+		self.begMoveEntry.grid(row=1, column=1, sticky='w')
 		self.begMoveEntry.insert('0', self.defaults['begMove'])
 
 		self.endMoveLabel = tk.Label(self.settingFrame, text="End Move")
-		self.endMoveLabel.grid(row=4, column=1, sticky='e')
+		self.endMoveLabel.grid(row=2, column=0, sticky='w')
 		self.endMoveEntry = tk.Entry(self.settingFrame)
-		self.endMoveEntry.grid(row=4, column=2, sticky='w')
+		self.endMoveEntry.grid(row=2, column=1, sticky='w')
 		self.endMoveEntry.insert('0', self.defaults['endMove'])		
+
+		# Radio Buttons go inside separate frame
+		self.limitFrame = tk.Frame(self.settingFrame, relief="groove", bd=3)
+		self.limitFrame.grid(row=5, column=1, sticky='w')
+		self.limitLabel = tk.Label(self.settingFrame, text="Limit Type")
+		self.limitLabel.grid(row=5, column=0, sticky='w')
+		self.depthRadio = tk.Radiobutton(self.limitFrame, value="depth", variable=self.limitType, text="Depth", command=self.limitTypeChange)
+		self.depthRadio.grid(row=0, column=1, sticky='w')
+		self.timeRadio = tk.Radiobutton(self.limitFrame, value="time", variable=self.limitType, text="Time", command=self.limitTypeChange)
+		self.timeRadio.grid(row=0, column=2, sticky='w')
+		# End Radio Buttons
+		
+		self.limitValLbl = tk.Label(self.settingFrame)
+		self.limitValLbl.grid(row=6, column=0, sticky='w')
+		self.limitTypeChange()
+		self.limitVal = tk.Entry(self.settingFrame, textvariable=self.limitValue)
+		self.limitVal.grid(row=6, column=1, sticky='w')
+
+	def limitTypeChange(self, e=None):
+		text = "Depth in Ply" if self.limitType.get()=="depth" else "Time in Seconds"
+		self.limitValLbl.configure(text=text)
 
 	def openBlCheck(self, e=None):
 		self.runButton.configure(state='disabled')
