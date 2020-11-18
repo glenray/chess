@@ -45,6 +45,14 @@ class blunderCheck():
 			if ("Blunder Checker" in threadNames) == False:
 				self.blWindow.destroy()
 
+		# tk variables
+		# limit type from radio button, either depth or time
+		self.limitType=tk.StringVar()
+		self.limitType.set("time")
+		# either number of seconds or ply depth, depending on radio button above
+		self.limitValue = tk.IntVar()
+		self.limitValue.set(10)
+
 		labelFont = font.Font(family="Tahoma", size=16)
 		buttonFont = font.Font(family="Tahoma", size=12)
 		textFont = font.Font(family="Courier", size=14)
@@ -57,53 +65,46 @@ class blunderCheck():
 		self.blWindow.focus_force()
 		# make window modal
 		self.blWindow.grab_set()
-
+		# Window Title
 		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10, font=labelFont)
 		self.label.grid(row=0, column=0, columnspan=2)
-
+		# Text widget
 		self.blText = tk.Text(self.blWindow, width=80, font=textFont, padx=10, pady=5)
 		self.blText.grid(row=1, column=0, columnspan=2, sticky='nsew', padx=10)
-
 		# Buttons
 		self.buttonFrame = tk.Frame(self.blWindow)
 		self.buttonFrame.grid(row=2, column=0, sticky='nsew')
-		# run
 		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.openBlCheck)
 		self.runButton.configure(buttonOptions)
 		self.runButton.pack(side='left', padx=10)
 		self.runButton.focus()
-		# cancel
 		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
 		self.cancelButton.configure(buttonOptions)
 		self.cancelButton.pack(side='left', padx=10)
+		# End Buttons
 
-		self.limitType=tk.StringVar()
-		self.limitValue = tk.IntVar()
-		self.limitType.set("time")
-		self.limitValue.set(42)
-
+		# container for blunder check settings
 		self.settingFrame = tk.Frame(self.blWindow)
 		self.settingFrame.columnconfigure(0, minsize=100)
 		self.settingFrame.grid(row=2, column=1, sticky='nsew')
-
+		# blunder threshold in cp: 
 		self.threshLabel = tk.Label(self.settingFrame, text="Threshold")
 		self.threshLabel.grid(row=0, column=0, sticky='w')
 		self.threshEntry = tk.Entry(self.settingFrame)
 		self.threshEntry.grid(row=0, column=1, sticky='w')
 		self.threshEntry.insert('0', self.defaults['threshold'])
-
+		# set the beginning move number to consider
 		self.begMoveLabel = tk.Label(self.settingFrame, text="Begin Move")
 		self.begMoveLabel.grid(row=1, column=0, sticky='w')
 		self.begMoveEntry = tk.Entry(self.settingFrame)
 		self.begMoveEntry.grid(row=1, column=1, sticky='w')
 		self.begMoveEntry.insert('0', self.defaults['begMove'])
-
+		# set the last move number to consider
 		self.endMoveLabel = tk.Label(self.settingFrame, text="End Move")
 		self.endMoveLabel.grid(row=2, column=0, sticky='w')
 		self.endMoveEntry = tk.Entry(self.settingFrame)
 		self.endMoveEntry.grid(row=2, column=1, sticky='w')
 		self.endMoveEntry.insert('0', self.defaults['endMove'])		
-
 		# Radio Buttons go inside separate frame
 		self.limitFrame = tk.Frame(self.settingFrame, relief="groove", bd=3)
 		self.limitFrame.grid(row=5, column=1, sticky='w')
@@ -113,35 +114,39 @@ class blunderCheck():
 		self.depthRadio.grid(row=0, column=1, sticky='w')
 		self.timeRadio = tk.Radiobutton(self.limitFrame, value="time", variable=self.limitType, text="Time", command=self.limitTypeChange)
 		self.timeRadio.grid(row=0, column=2, sticky='w')
-		# End Radio Buttons
-		
+		# value of limit, either seconds for time or ply for depth
 		self.limitValLbl = tk.Label(self.settingFrame)
 		self.limitValLbl.grid(row=6, column=0, sticky='w')
-		self.limitTypeChange()
+		self.limitTypeChange()	# set the default
 		self.limitVal = tk.Entry(self.settingFrame, textvariable=self.limitValue)
 		self.limitVal.grid(row=6, column=1, sticky='w')
 
+	# Update limit value label when limit type radio button changes
 	def limitTypeChange(self, e=None):
 		text = "Depth in Ply" if self.limitType.get()=="depth" else "Time in Seconds"
 		self.limitValLbl.configure(text=text)
 
 	def openBlCheck(self, e=None):
 		self.runButton.configure(state='disabled')
-		time = self.timeEntry.get()
-		depth = self.depthEntry.get()
+		limitVal = self.limitVal.get()
 		thresh = self.threshEntry.get()
 		begMove = self.begMoveEntry.get()
 		endMove = self.endMoveEntry.get()
 
-		time = int(time) if self.isInteger(time) else None
-		depth = int(depth) if self.isInteger(depth) else None
+		limitVal = int(limitVal) if self.isInteger(limitVal) else None
 		thresh = int(thresh) if self.isInteger(thresh) else None
 		begMove = int(begMove) if self.isInteger(begMove) else 1
 		endMove = int(endMove) if self.isInteger(endMove) else None
 
+		kwargs = {"blunderThresh":thresh, 'begMove':begMove, 'endMove':endMove}
+		if self.limitType.get()=="depth":
+			kwargs['depth'] = limitVal
+		else:
+			kwargs['time'] = limitVal
+
 		threading.Thread(
 			target=self.blunderChk, 
-			kwargs=dict(depth=depth, time=time, blunderThresh=thresh, begMove=begMove, endMove=endMove),
+			kwargs=kwargs,
 			name="Blunder Checker",
 			daemon=True).start()
 
