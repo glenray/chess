@@ -73,7 +73,7 @@ class blunderCheck():
 		# Buttons
 		self.buttonFrame = tk.Frame(self.blWindow)
 		self.buttonFrame.grid(row=2, column=0, sticky='nsew')
-		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.openBlCheck)
+		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.spawnBlunderCheck)
 		self.runButton.configure(buttonOptions)
 		self.runButton.pack(side='left', padx=10)
 		self.runButton.focus()
@@ -126,7 +126,7 @@ class blunderCheck():
 		self.limitValLbl.configure(text=text)
 
 	# Spawns blunder check thread
-	def openBlCheck(self, e=None):
+	def spawnBlunderCheck(self, e=None):
 		self.runButton.configure(state='disabled')
 		self.gui.activeBlunderCheck = "".join(random.choice(string.ascii_letters) for _ in range(10))
 		limitVal = self.limitVal.get()
@@ -145,11 +145,12 @@ class blunderCheck():
 			'begMove':begMove, 
 			'endMove':endMove
 		}
+		# determine whether limit is depth or time
 		if self.limitType.get()=="depth":
 			kwargs['depth'] = limitVal
 		else:
 			kwargs['time'] = limitVal
-
+		# spawn a thread for the blunder check
 		threading.Thread(
 			target=self.blunderChk, 
 			kwargs=kwargs,
