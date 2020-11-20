@@ -18,6 +18,9 @@ class GUI:
 		self.createWindow()
 		self.loadPieceImages()
 		self.addBoardPane()
+		# bring focus to the active notebook
+		# self.notebook.index("current")
+		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
 
 	# create Window
@@ -27,16 +30,8 @@ class GUI:
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.geometry("800x800")
 		self.notebook = ttk.Notebook(self.root)
-		self.notebook.bind("<<NotebookTabChanged>>", self.test)
-
-	def test(self, e):
-		# pass
-		# pdb.set_trace()
-		index = self.notebook.index(self.notebook.select())
-		activeBoard = self.boardPanes[index]
-		activeBoard.pWindow.focus()
-		activeBoard.variations.selection_set(0)
-
+		self.notebook.enable_traversal()
+		self.notebook.pack(expand=1, fill='both')
 
 	# Cache png image file for each piece
 	def loadPieceImages(self):
@@ -48,8 +43,10 @@ class GUI:
 			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
 
 	def addBoardPane(self):
-		self.boardPanes.append(boardPane(self))
-		self.boardPanes.append(boardPane(self))
+		boardPane(self)
+		# self.boardPanes.append(p)
+		boardPane(self)
+		# self.boardPanes.append(p)
 
 def main():
 	gui = GUI()

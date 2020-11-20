@@ -14,9 +14,9 @@ from gameScoreVisitor import gameScoreVisitor
 Implements blunder check functionality
 '''
 class blunderCheck():
-	def __init__(self, gui):
-		self.gui = gui
-		self.game = gui.game
+	def __init__(self, boardPane):
+		self.boardPane = boardPane
+		self.game = boardPane.game
 		self.engines = {
 			'Stockfish' : "C:/Users/Glen/Documents/python/stockfish/bin/stockfish_20090216_x64_bmi2.exe"
 		}
@@ -39,7 +39,7 @@ class blunderCheck():
 	def blunderWin(self):
 		# Cancel button, Escape key, or x to close the window
 		def blunderOff(e=None):
-			self.gui.activeBlunderCheck = None
+			self.boardPane.activeBlunderCheck = None
 			self.blWindow.destroy()
 
 		# tk variables
@@ -56,7 +56,7 @@ class blunderCheck():
 
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
 
-		self.blWindow = tk.Toplevel(self.gui.gui.root)
+		self.blWindow = tk.Toplevel(self.boardPane.gui.root)
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
@@ -128,7 +128,7 @@ class blunderCheck():
 	# Spawns blunder check thread
 	def spawnBlunderCheck(self, e=None):
 		self.runButton.configure(state='disabled')
-		self.gui.activeBlunderCheck = "".join(random.choice(string.ascii_letters) for _ in range(10))
+		self.boardPane.activeBlunderCheck = "".join(random.choice(string.ascii_letters) for _ in range(10))
 		limitVal = self.limitVal.get()
 		thresh = self.threshEntry.get()
 		begMove = self.begMoveEntry.get()
@@ -140,7 +140,7 @@ class blunderCheck():
 		endMove = int(endMove) if self.isInteger(endMove) else None
 
 		kwargs = {
-			'threadName':self.gui.activeBlunderCheck,
+			'threadName':self.boardPane.activeBlunderCheck,
 			"blunderThresh":thresh, 
 			'begMove':begMove, 
 			'endMove':endMove
@@ -194,7 +194,7 @@ class blunderCheck():
 				saveInfo = self.analyzePosition(node.parent.board(), limit)
 
 			# quit if blunder check has been turned off
-			if self.gui.activeBlunderCheck != threadName: 
+			if self.boardPane.activeBlunderCheck != threadName: 
 				print(f"Blunder Check {threadName} Cancelled")
 				return
 
@@ -244,12 +244,12 @@ class blunderCheck():
 
 	# after blundercheck completes, update gui before exit
 	def updateGUI(self, game):
-		self.gui.curNode = self.gui.nodes[0]
-		self.gui.game = game
+		self.boardPane.curNode = self.boardPane.nodes[0]
+		self.boardPane.game = game
 		# populating the text widget is wicked slow if it's visible
-		self.gui.gameScore.pack_forget()
-		self.gui.game.accept(gameScoreVisitor(self.gui))
-		self.gui.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.gui.printCurrentBoard()
-		self.gui.printVariations()
+		self.boardPane.gameScore.pack_forget()
+		self.boardPane.game.accept(gameScoreVisitor(self.boardPane))
+		self.boardPane.gameScore.pack(anchor='n', expand=True, fill='both')
+		self.boardPane.printCurrentBoard()
+		self.boardPane.printVariations()
 		self.blWindow.destroy()

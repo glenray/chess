@@ -16,8 +16,8 @@ from infiniteAnalysis import infiniteAnalysis
 import pdb
 
 class boardPane:
-	def __init__(self, gui):
-		self.gui = gui
+	def __init__(self, boardPane):
+		self.gui = boardPane
 		self.boardSize = 400
 		self.lightColorSq = "yellow"
 		self.darkColorSq = "brown"
@@ -143,7 +143,8 @@ class boardPane:
 		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
-		self.variations = tk.Listbox(self.analysisFrame, width=20)
+		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
+		self.variations = tk.Listbox(self.analysisFrame, width=20, exportselection=False)
 		self.analysis = tk.Text(self.analysisFrame, height=10)
 		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
 		
@@ -153,10 +154,8 @@ class boardPane:
 		self.pWindow.bind('<Control-e>', self.toggleEngine)
 		# launch a blunder check class instance
 		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
-		self.pWindow.focus()
 
 		self.gui.notebook.add(self.pWindow, text="1 Board")
-		self.gui.notebook.pack(expand=1, fill='both')
 
 		# Frame container for board canvas
 		self.boardFrame.bind("<Configure>", self.resizeBoard)
