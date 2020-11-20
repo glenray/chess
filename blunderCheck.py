@@ -56,7 +56,7 @@ class blunderCheck():
 
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
 
-		self.blWindow = tk.Toplevel(self.gui.root)
+		self.blWindow = tk.Toplevel(self.gui.gui.root)
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
