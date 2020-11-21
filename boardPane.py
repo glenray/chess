@@ -16,7 +16,7 @@ from infiniteAnalysis import infiniteAnalysis
 import pdb
 
 class boardPane:
-	def __init__(self, boardPane):
+	def __init__(self, boardPane, pgnFile=None):
 		self.gui = boardPane
 		self.boardSize = 400
 		self.lightColorSq = "yellow"
@@ -34,7 +34,7 @@ class boardPane:
 		# populated by gameScoreVisitor class
 		self.nodes = []
 		self.curNode = None
-		self.pgnFile = 'pgn/blind-warrior vs AnwarQ.pgn'
+		self.pgnFile = pgnFile
 		# self.pgnFile = 'output.pgn'
 		# self.pgnFile = 'pgn/Annotated_Games.pgn'
 		# self.pgnFile = 'pgn/testC.pgn'
@@ -140,20 +140,22 @@ class boardPane:
 
 		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0)
+		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0, width=600)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
 		self.variations = tk.Listbox(self.analysisFrame, width=20, exportselection=False)
 		self.analysis = tk.Text(self.analysisFrame, height=10)
 		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
-		
+
 		self.pWindow.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.pWindow.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.pWindow.bind('<Control-r>', self.reverseBoard)
 		self.pWindow.bind('<Control-e>', self.toggleEngine)
 		# launch a blunder check class instance
 		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
+		self.pWindow.bind("<Down>", self.selectVariation)
+		self.pWindow.bind("<Up>", self.selectVariation)
 
 		self.gui.notebook.add(self.pWindow, text="1 Board")
 
@@ -167,12 +169,15 @@ class boardPane:
 		self.analysisFrame.pack(anchor='n', fill='x')
 
 		# variation list box
+		self.variations.bind('<Right>', lambda e: self.move(e, 'forward'))
+		self.variations.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.variations.pack(side=tk.LEFT)
-		self.gui.root.bind("<Down>", self.selectVariation)
-		self.gui.root.bind("<Up>", self.selectVariation)
 
 		# analysis text
 		self.analysis.config(wrap=tk.WORD)
+		self.analysis.bind('<FocusIn>', lambda e: self.pWindow.focus())
+		self.analysis.bind("<Down>", self.selectVariation)
+		self.analysis.bind("<Up>", self.selectVariation)
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 
 		# game score
@@ -182,13 +187,20 @@ class boardPane:
 		self.gameScore.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
 		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
+		self.gameScore.bind('<Right>', lambda e: self.move(e, 'forward'))
+		self.gameScore.bind('<Left>', lambda e: self.move(e, 'backward'))
+		self.gameScore.bind("<Down>", self.selectVariation)
+		self.gameScore.bind("<Up>", self.selectVariation)
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame)
-		self.pWindow.add(self.controlFrame)
+		self.pWindow.add(self.controlFrame, stretch='always')
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
+		# pdb.set_trace()
+		# return focus to the main window so arrow keys continue to work
+		self.pWindow.focus_force()
 		moveIndices = []
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
@@ -204,9 +216,13 @@ class boardPane:
 		# is not represented as a move on the game score
 		self.curNode = self.nodes[moveIndices.index(moveTagRange)+1]
 		self.printCurrentBoard()
+		self.printVariations()
 		self.updateGameScore()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
+
+	def test(self, e):
+		print("test")
 
 	'''
 	Move a piece from on sq to another

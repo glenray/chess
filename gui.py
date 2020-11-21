@@ -27,9 +27,11 @@ class GUI:
 	def createWindow(self):
 		self.root = tk.Tk()
 		self.root.title("Glen's Chess Analysis Wizard")
+		# self.root.attributes('-fullscreen', True)
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
-		self.root.geometry("800x800")
-		self.notebook = ttk.Notebook(self.root)
+		self.root.geometry("1200x800+5+5")
+		# takefocus=False prevents tab from taking the focus on tab traversal
+		self.notebook = ttk.Notebook(self.root, takefocus=False)
 		self.notebook.enable_traversal()
 		self.notebook.pack(expand=1, fill='both')
 
@@ -43,10 +45,10 @@ class GUI:
 			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
 
 	def addBoardPane(self):
-		boardPane(self)
-		# self.boardPanes.append(p)
-		boardPane(self)
-		# self.boardPanes.append(p)
+		file1 = 'pgn/blind-warrior vs AnwarQ.pgn'
+		file2 = 'pgn/Annotated_Games.pgn'
+		boardPane(self, file1)
+		boardPane(self, file2)
 
 def main():
 	gui = GUI()
