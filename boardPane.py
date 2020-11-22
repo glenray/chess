@@ -3,6 +3,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 from tkinter import scrolledtext
+from tkinter import filedialog
 import chess
 import chess.engine
 import chess.pgn
@@ -131,6 +132,14 @@ class boardPane:
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
 
+	def loadGameFile(self, e):
+		self.pgnFile = filedialog.askopenfilename()
+		file = open(self.pgnFile, encoding='latin-1')
+		self.game = chess.pgn.read_game(file)
+		self.game.accept(gameScoreVisitor(self))
+		self.printCurrentBoard()
+		self.printVariations()
+
 	# create all tkinter widgets and event bindings
 	def createWidgets(self):
 		# Fonts and Styling
@@ -156,6 +165,7 @@ class boardPane:
 		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
 		self.pWindow.bind("<Down>", self.selectVariation)
 		self.pWindow.bind("<Up>", self.selectVariation)
+		self.pWindow.bind("<Control-o>", self.loadGameFile)
 
 		self.gui.notebook.add(self.pWindow, text="1 Board")
 

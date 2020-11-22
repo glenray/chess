@@ -1,6 +1,7 @@
 from PIL import Image, ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import filedialog
 from tkinter import font
 from tkinter import scrolledtext
 from boardPane import boardPane
@@ -17,9 +18,9 @@ class GUI:
 	def setup(self):
 		self.createWindow()
 		self.loadPieceImages()
-		self.addBoardPane()
+		self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
 		# bring focus to the active notebook
-		# self.notebook.index("current")
+		self.notebook.index("current")
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
 
@@ -29,11 +30,16 @@ class GUI:
 		self.root.title("Glen's Chess Analysis Wizard")
 		# self.root.attributes('-fullscreen', True)
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
+		self.root.bind("<Control-n>", self.openPGN)
 		self.root.geometry("1200x800+5+5")
 		# takefocus=False prevents tab from taking the focus on tab traversal
 		self.notebook = ttk.Notebook(self.root, takefocus=False)
 		self.notebook.enable_traversal()
 		self.notebook.pack(expand=1, fill='both')
+
+	def openPGN(self, e):
+		file = filedialog.askopenfilename()
+		self.addBoardPane(file)
 
 	# Cache png image file for each piece
 	def loadPieceImages(self):
@@ -44,11 +50,8 @@ class GUI:
 		for name in pieceNames:
 			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')
 
-	def addBoardPane(self):
-		file1 = 'pgn/blind-warrior vs AnwarQ.pgn'
-		file2 = 'pgn/Annotated_Games.pgn'
-		boardPane(self, file1)
-		boardPane(self, file2)
+	def addBoardPane(self, fileName=None):
+		boardPane(self, fileName)
 
 def main():
 	gui = GUI()
