@@ -205,16 +205,17 @@ class boardPane:
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
-		self.gui.notebook.forget('current')
+		nb = self.gui.notebook
+		nb.forget('current')
+		tabs = nb.tabs()
 		self.pWindow.destroy()
-		# return if there are no more tabs
-		if not self.gui.notebook.tabs(): return
-		# index of current tab
-		activeTabIdx = self.gui.notebook.index('current')
-		# the name of the panedwindow in the active tab
-		panedWindowName = self.gui.notebook.tabs()[activeTabIdx]
-		# put focus on that paned window
-		self.gui.root.nametowidget(panedWindowName).focus()
+		# if there are other tabs, set focus to the one active
+		if tabs: 
+			activeTabIdx = nb.index('current')
+			# the name of the panedwindow in the active tab
+			panedWindowName = tabs[activeTabIdx]
+			# put focus on that paned window
+			self.gui.root.nametowidget(panedWindowName).focus()
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
