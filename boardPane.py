@@ -161,6 +161,7 @@ class boardPane:
 		self.pWindow.bind("<Down>", self.selectVariation)
 		self.pWindow.bind("<Up>", self.selectVariation)
 		self.pWindow.bind("<Control-o>", self.loadGameFile)
+		self.pWindow.bind("<Control-w>", self.removeTab)
 
 		self.gui.notebook.insert('end', self.pWindow, text="1 Board")
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
@@ -201,6 +202,18 @@ class boardPane:
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
+
+	# Ctrl-w removes the tab; sets focuses on new current tab
+	def removeTab(self, e):
+		self.gui.notebook.forget('current')
+		# return if there are no more tabs
+		if not self.gui.notebook.tabs(): return
+		# index of current tab
+		active = self.gui.notebook.index('current')
+		# the name of the panedwindow in the active tab
+		tab = self.gui.notebook.tabs()[active]
+		# put focus on that paned window
+		self.gui.root.nametowidget(tab).focus()
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):

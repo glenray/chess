@@ -11,8 +11,6 @@ class GUI:
 	def __init__(self):
 		# a dictonary of pillow image objects for each piece png file
 		self.pieceImg = {}
-		# list of board panes in notebook
-		self.boardPanes = []
 		self.setup()
 
 	def setup(self):
@@ -20,7 +18,6 @@ class GUI:
 		self.loadPieceImages()
 		self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
 		# bring focus to the active notebook
-		self.notebook.index("current")
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
 
