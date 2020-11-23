@@ -18,7 +18,6 @@ class gameScoreVisitor(BaseVisitor):
 		# the first node is the root, i.e. start position
 		self.boardPane.nodes = [self.currentNode]
 
-
 	def end_headers(self):
 		gs = self.boardPane.gameScore
 		gs.config(state='normal')
@@ -32,8 +31,6 @@ class gameScoreVisitor(BaseVisitor):
 		gs.insert("end", eco)
 
 	def visit_move(self, board, move):
-		gs = self.boardPane.gameScore
-		moveNo = f"{board.fullmove_number}." if board.turn else ""
 		if self.endsVariation:
 			self.endsVariation = False
 			self.currentNode = self.varStack.pop()
@@ -51,6 +48,11 @@ class gameScoreVisitor(BaseVisitor):
 
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
+		self.outputMove(board, move)
+
+	def outputMove(self, board, move):
+		gs = self.boardPane.gameScore
+		moveNo = f"{board.fullmove_number}." if board.turn else ""
 		gs.insert('end', f"{moveNo}")
 		# tag each move
 		gs.insert('end', f"{board.san(move)}", ('move',))
