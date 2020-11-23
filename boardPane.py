@@ -14,11 +14,9 @@ from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 from infiniteAnalysis import infiniteAnalysis
 
-import pdb
-
 class boardPane:
-	def __init__(self, boardPane, pgnFile=None):
-		self.gui = boardPane
+	def __init__(self, gui, pgnFile=None):
+		self.gui = gui
 		self.boardSize = 400
 		self.lightColorSq = "yellow"
 		self.darkColorSq = "brown"
@@ -36,10 +34,7 @@ class boardPane:
 		self.nodes = []
 		self.curNode = None
 		self.pgnFile = pgnFile
-		# self.pgnFile = 'output.pgn'
-		# self.pgnFile = 'pgn/Annotated_Games.pgn'
-		# self.pgnFile = 'pgn/testC.pgn'
-		file = open(self.pgnFile, encoding='latin-1')
+		file = open(self.pgnFile)
 		self.game = chess.pgn.read_game(file)
 		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
@@ -167,7 +162,8 @@ class boardPane:
 		self.pWindow.bind("<Up>", self.selectVariation)
 		self.pWindow.bind("<Control-o>", self.loadGameFile)
 
-		self.gui.notebook.add(self.pWindow, text="1 Board")
+		self.gui.notebook.insert('end', self.pWindow, text="1 Board")
+		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 
 		# Frame container for board canvas
 		self.boardFrame.bind("<Configure>", self.resizeBoard)
@@ -203,7 +199,7 @@ class boardPane:
 		self.gameScore.bind("<Up>", self.selectVariation)
 
 		# Add widgets to paned window
-		self.pWindow.add(self.boardFrame)
+		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
 
 	# click on move in gamescore updates board to that move
@@ -230,9 +226,6 @@ class boardPane:
 		self.updateGameScore()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
-
-	def test(self, e):
-		print("test")
 
 	'''
 	Move a piece from on sq to another
@@ -424,7 +417,3 @@ class boardPane:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
-
-if __name__ == '__main__':
-	g=GUI()
-	g.setup()
