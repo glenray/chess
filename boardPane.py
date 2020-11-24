@@ -251,8 +251,28 @@ class boardPane:
 
 				self.MiP.append((fSqId, tSqId, move))
 
+	def makeMoveOnCanvas(self, move, direction):
+		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant, isPromotion) = (self.board.is_castling(move),
+			self.board.is_kingside_castling(move),
+			self.board.is_capture(move),
+			self.board.is_en_passant(move),
+			move.promotion)
+
+		if isCaptureMove:
+			if isEnPassant:
+				self.enPassant(move, direction)
+			else:
+				self.capturing(move, direction)
+		elif isCastling:
+			self.castling(move, direction, isKingSideCastling)
+		else:
+			self.movePiece(move, direction)	# this is a normal move
+		if isPromotion:
+			self.promotion(move, direction) # promotion can either be by capture or normal move
+
 	def makeHumanMove(self, move):
-		print(move)
+		self.makeMoveOnCanvas(move, 'forward')		
+		self.board.push(move)
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
@@ -310,15 +330,6 @@ class boardPane:
 		# update image cache to add piece at toSq and remove piece at fromSq
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
-
-	def testMoveProperties(self, move):
-		return (
-			self.board.is_castling(move),
-			self.board.is_kingside_castling(move),
-			self.board.is_capture(move),
-			self.board.is_en_passant(move),
-			move.promotion		
-		)
 
 	def movePiece(self, move, direction):
 		ts,fs = move.to_square, move.from_square
@@ -415,28 +426,14 @@ class boardPane:
 			varIdx = self.variations.curselection()[0]
 			self.curNode = self.curNode.variations[varIdx]
 			move = self.curNode.move
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-					isPromotion) = self.testMoveProperties(move)
+			self.makeMoveOnCanvas(move, direction)
 			self.board = self.curNode.board()
 		else:
 			if self.curNode == self.curNode.game(): return
 			move = self.curNode.move
 			self.board = self.curNode.parent.board()
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-				isPromotion) = self.testMoveProperties(move)
+			self.makeMoveOnCanvas(move, direction)
 			self.curNode=self.curNode.parent
-
-		if isCaptureMove:
-			if isEnPassant:
-				self.enPassant(move, direction)
-			else:
-				self.capturing(move, direction)
-		elif isCastling:
-			self.castling(move, direction, isKingSideCastling)
-		else:
-			self.movePiece(move, direction)	# this is a normal move
-		if isPromotion:
-			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 		self.updateGameScore()
 		self.printVariations()
