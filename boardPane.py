@@ -14,12 +14,17 @@ from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 from infiniteAnalysis import infiniteAnalysis
 
+import pdb
+
 class boardPane:
 	def __init__(self, gui, pgnFile=None):
 		self.gui = gui
 		self.boardSize = 400
-		self.lightColorSq = "yellow"
-		self.darkColorSq = "brown"
+		self.settings = {
+			'lightColorSq' : "yellow",
+			'darkColorSq' : "brown",
+			'hlSqColor'	: 'black'
+		}
 		self.squares = []		# list of canvas ids for all canvas rectangles
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		# a dictonary of tkImage objects for each piece resized for current board
@@ -40,6 +45,12 @@ class boardPane:
 		self.varIdx = None
 		# The randomly generated name of any active blundercheck thread
 		self.activeBlunderCheck = None
+		# If a human move is in progress
+		# a list of tuples (x, y, z) where
+		# x: the canvas square id of the from piece with valid move
+		# y: the canvas square id of the to square where piece can go
+		# z: chess.move from x to y
+		self.MiP = []
 
 		self.setup()
 
@@ -170,6 +181,7 @@ class boardPane:
 		self.boardFrame.bind("<Configure>", self.resizeBoard)
 
 		# Board Canvas
+		self.canvas.bind("<Button-1>", self.canvasTouch)
 		self.canvas.pack()
 
 		# Analysis Frame
@@ -202,6 +214,45 @@ class boardPane:
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
+
+	def canvasTouch(self, e):
+		# get id of canvas item closest to click point
+		# if that item is tagged with 'piece', get the next item
+		# under that, i.e. the square
+		sqId = self.canvas.find_closest(e.x, e.y, 0, 'piece')[0]
+		# The 2nd tag of a square is always its name, i.e. 'e4'
+		sqName = self.canvas.gettags(sqId)[1]
+		# if is the second touch
+		if self.MiP:
+			# pdb.set_trace()
+			# is this the same square clicked the last time?
+			# if so, we'll unhighlight everything and return
+			isSameSq = sqId == self.MiP[0][0]
+			# unhighlight the from square
+			self.canvas.itemconfigure(self.MiP[0][0], width=0)
+			# unhighlight each to square
+			for m in self.MiP:
+				# if this finishes one of the legal moves, make it!
+				if self.canvas.gettags(m[1])[1] == sqName:
+					self.makeHumanMove(m[2])
+				self.canvas.itemconfigure(m[1], width=0)
+			self.MiP = []
+			return
+
+		# if made it here, this is first touch
+		# iterate all the legal moves in the position.
+		for move in self.board.legal_moves:
+			if chess.square_name(move.from_square) == sqName:
+				fSqId = self.canvas.find_withtag(sqName)[0]
+				self.canvas.itemconfigure(fSqId, outline=self.settings['hlSqColor'], width=4)
+
+				tSqId = self.canvas.find_withtag(chess.square_name(move.to_square))[0]
+				self.canvas.itemconfigure(tSqId, outline=self.settings['hlSqColor'], width=4)
+
+				self.MiP.append((fSqId, tSqId, move))
+
+	def makeHumanMove(self, move):
+		print(move)
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
@@ -322,7 +373,7 @@ class boardPane:
 	def createSquares(self):
 		file = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 		rank = ('8', '7', '6', '5', '4', '3', '2', '1')
-		sqColor = (self.lightColorSq, self.darkColorSq)
+		sqColor = (self.settings['lightColorSq'], self.settings['darkColorSq'])
 		for row in range(8):
 			for col in range(8):
 				sqName = str(file[col])+rank[row]
