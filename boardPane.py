@@ -276,45 +276,48 @@ class boardPane:
 	def makeHumanMove(self, move):
 		self.makeMoveOnCanvas(move, 'forward')	
 		self.humanMovetoGameScore(move)
+		self.printVariations()
 		self.board=self.curNode.board()
+		if self.activeEngine != None:
+			infiniteAnalysis(self)
 
 	def humanMovetoGameScore(self, move):
 		# if the move is already a variation, update board as usual
 		if self.curNode.has_variation(move):
 			self.curNode = self.curNode.variation(move)
 			self.updateGameScore()
-			self.printVariations()
 		# otherwise, we need to add the variation
 		else:
+			self.gameScore.config(state='normal')
 			moveranges = self.gameScore.tag_ranges('move')
 			curNodeIndex = self.nodes.index(self.curNode)
-			insertPoint = moveranges[curNodeIndex*2+1]
 			self.board = self.curNode.board()
 			self.curNode = self.curNode.add_variation(move)
-			# add node to node list
-			nodeIncrement = 2 if self.curNode.starts_variation() else 1
-			self.nodes.insert(curNodeIndex+nodeIncrement, self.curNode)
-
-			self.gameScore.config(state='normal')
-			
 			# if starting a variation, need to open paren before the next move,
 			# set mark between parens, and output first move
 			moveTxt = f"{self.curNode.san()}" 
 			if self.curNode.starts_variation():
+				insertPoint = moveranges[curNodeIndex*2+1]
 				moveNo = f"{self.board.fullmove_number}." if self.board.turn else f"{self.board.fullmove_number}..."
 				self.gameScore.tag_remove('curMove', '0.0', 'end')
 				self.gameScore.insert(insertPoint, ' ()')
+				# put varEnd mark between the ()
 				self.gameScore.mark_set('varEnd', f"{insertPoint}+2 c")
 				self.gameScore.insert('varEnd', moveNo)
 				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+				# add variation to node list
+				self.nodes.insert(curNodeIndex+2, self.curNode)
 			# if continuing a variation, need to add move at mark
 			else:
+				insertPoint = moveranges[curNodeIndex*2]
+				self.gameScore.mark_set('varEnd', f"{insertPoint}-2 c")
 				moveNo = f" {self.board.fullmove_number}." if self.board.turn else " "
 				self.gameScore.tag_remove('curMove', '0.0', 'end')
 				self.gameScore.insert('varEnd', moveNo)
 				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+				# add variation to node list
+				self.nodes.insert(curNodeIndex+1, self.curNode)
 
-			self.printVariations()
 			self.gameScore.config(state='disabled')
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
