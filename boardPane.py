@@ -67,12 +67,14 @@ class boardPane:
 
 	# insert current variations into the variation list box
 	def printVariations(self):
+		# pdb.set_trace()
 		self.variations.delete(0, tk.END)
 		for var in self.curNode.variations:
 			b=var.parent.board()
 			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
-			self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
-			self.variations.selection_set(0)
+			# self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
+			self.variations.insert(self.curNode.variations.index(var), f"{moveNo} {var.san()}")
+		self.variations.selection_set(0)
 
 	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
@@ -215,6 +217,8 @@ class boardPane:
 		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
 
+		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
+
 	def canvasTouch(self, e):
 		# get id of canvas item closest to click point
 		# if that item is tagged with 'piece', get the next item
@@ -224,7 +228,6 @@ class boardPane:
 		sqName = self.canvas.gettags(sqId)[1]
 		# if is the second touch
 		if self.MiP:
-			# pdb.set_trace()
 			# is this the same square clicked the last time?
 			# if so, we'll unhighlight everything and return
 			isSameSq = sqId == self.MiP[0][0]
@@ -271,8 +274,48 @@ class boardPane:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 	def makeHumanMove(self, move):
-		self.makeMoveOnCanvas(move, 'forward')		
-		self.board.push(move)
+		self.makeMoveOnCanvas(move, 'forward')	
+		self.humanMovetoGameScore(move)
+		self.board=self.curNode.board()
+
+	def humanMovetoGameScore(self, move):
+		# if the move is already a variation, update board as usual
+		if self.curNode.has_variation(move):
+			self.curNode = self.curNode.variation(move)
+			self.updateGameScore()
+			self.printVariations()
+		# otherwise, we need to add the variation
+		else:
+			moveranges = self.gameScore.tag_ranges('move')
+			curNodeIndex = self.nodes.index(self.curNode)
+			insertPoint = moveranges[curNodeIndex*2+1]
+			self.board = self.curNode.board()
+			self.curNode = self.curNode.add_variation(move)
+			# add node to node list
+			nodeIncrement = 2 if self.curNode.starts_variation() else 1
+			self.nodes.insert(curNodeIndex+nodeIncrement, self.curNode)
+
+			self.gameScore.config(state='normal')
+			
+			# if starting a variation, need to open paren before the next move,
+			# set mark between parens, and output first move
+			moveTxt = f"{self.curNode.san()}" 
+			if self.curNode.starts_variation():
+				moveNo = f"{self.board.fullmove_number}." if self.board.turn else f"{self.board.fullmove_number}..."
+				self.gameScore.tag_remove('curMove', '0.0', 'end')
+				self.gameScore.insert(insertPoint, ' ()')
+				self.gameScore.mark_set('varEnd', f"{insertPoint}+2 c")
+				self.gameScore.insert('varEnd', moveNo)
+				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+			# if continuing a variation, need to add move at mark
+			else:
+				moveNo = f" {self.board.fullmove_number}." if self.board.turn else " "
+				self.gameScore.tag_remove('curMove', '0.0', 'end')
+				self.gameScore.insert('varEnd', moveNo)
+				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+
+			self.printVariations()
+			self.gameScore.config(state='disabled')
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
@@ -290,9 +333,6 @@ class boardPane:
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
-		# pdb.set_trace()
-		# return focus to the main window so arrow keys continue to work
-		self.pWindow.focus_force()
 		moveIndices = []
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"

@@ -31,6 +31,7 @@ class gameScoreVisitor(BaseVisitor):
 		gs.insert("end", eco)
 
 	def visit_move(self, board, move):
+		gs = self.boardPane.gameScore
 		if self.endsVariation:
 			self.endsVariation = False
 			self.currentNode = self.varStack.pop()
