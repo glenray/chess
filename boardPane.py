@@ -300,6 +300,8 @@ class boardPane:
 				insertPoint = moveranges[curNodeIndex*2+1]
 				moveNo = f"{self.board.fullmove_number}." if self.board.turn else f"{self.board.fullmove_number}..."
 				self.gameScore.tag_remove('curMove', '0.0', 'end')
+				# Bug: new variation should go before the next mainline move,
+				# not before the sibling variation.
 				self.gameScore.insert(insertPoint, ' ()')
 				# put varEnd mark between the ()
 				self.gameScore.mark_set('varEnd', f"{insertPoint}+2 c")
