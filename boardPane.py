@@ -157,7 +157,8 @@ class boardPane:
 
 		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0, width=1500)
+		cWidth = int(self.gui.screenW/2)
+		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0, width=cWidth)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
@@ -525,3 +526,11 @@ class boardPane:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
+
+
+def main():
+	from gui import GUI
+	GUI()
+
+if __name__ == '__main__':
+	main()

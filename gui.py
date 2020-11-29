@@ -35,11 +35,14 @@ class GUI:
 	# create Window
 	def createWindow(self):
 		self.root = tk.Tk()
+		self.screenW = self.root.winfo_screenwidth()
+		self.screenH = self.root.winfo_screenheight()
+		# self.root.geometry(f"{int(self.screenW)}x{int(self.screenH)}")
 		self.root.title("Glen's Chess Analysis Wizard")
+		self.root.state('zoomed')
 		# self.root.attributes('-fullscreen', True)
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.bind("<Control-n>", self.openPGN)
-		self.root.geometry("2000x1500+5+5")
 		# takefocus=False prevents tab from taking the focus on tab traversal
 		self.notebook = ttk.Notebook(self.root, takefocus=False)
 		self.notebook.enable_traversal()
