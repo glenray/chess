@@ -112,10 +112,17 @@ class boardPane:
 		for key in pm:
 			self.putImage(key)
 
-	def putImage(self, square):
+	# Put a new piece on the board
+	# In a regular game, this may be because a piece has been promoted or 
+	# a backward move puts a taken piece back on the board
+	# A board is created to represent the current state of the board that 
+	# needs to be mimiced in the GUI. In the event of a backward move, 
+	# that the the parent of the current node.
+	def putImage(self, square, direction='forward'):
+		board = self.curNode.board() if direction == 'forward' else self.curNode.parent.board()
 		sqName = chess.square_name(square)
 		coords = self.canvas.coords(sqName)
-		piece = self.board.piece_at(square)
+		piece = board.piece_at(square) 
 		# piece.symbol() returns the letter description for the piece, eg P or p  
 		pieceName = piece.symbol()
 		i=self.canvas.create_image((coords[0], coords[1]), image=self.tkPieceImg[pieceName], anchor='nw', tag='piece')
@@ -382,10 +389,25 @@ class boardPane:
 		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
 		self.moveCanvasPiece(*sqs)
 
+	''' Promote a piece on the back rank
+	Forward: the pawn has already been moved to the queening square
+	and any captured piece has been removed.
+	On the self.curNode.board(), We need to 
+	1. delete the pawn on the queening square
+	2. put the appropriate piece in it's place
+
+	Backward: the promoted piece has already been moved back to the pawn's
+	pre-promotion position, and any taken piece returned to the queening square. 
+	On self.curNode.parent.board(), we need to
+	1. remove the promoted piece graphic on the 7th rank
+	2. replace it with a pawn
+	'''
 	def promotion(self, move, direction):
+		# pdb.set_trace()
 		targetSq = move.to_square if direction == 'forward' else move.from_square
+		# if direction == 'forward' else move.from_square
 		self.deletePieceImage(targetSq)
-		self.putImage(targetSq)
+		self.putImage(targetSq, direction)
 
 	def capturing(self, move, direction):
 		ts,fs = move.to_square, move.from_square
@@ -394,7 +416,7 @@ class boardPane:
 			self.moveCanvasPiece(fs, ts)
 		else:
 			self.moveCanvasPiece(ts, fs)
-			self.putImage(ts)
+			self.putImage(ts, direction)
 
 	def castling(self, move, direction, isKingSideCastling):
 		# locate rook rank and file (0 based)
@@ -416,15 +438,18 @@ class boardPane:
 	# 	depending on direction through move stack
 	def enPassant(self, move, direction):
 		ts,fs = move.to_square, move.from_square
-		# forward: delete the taken pawn
-		# backward: replace the taken pawn
-		squares,func = ((fs, ts), self.deletePieceImage) if direction == 'forward' else ((ts, fs), self.putImage)
-		# move capturing piece
-		self.moveCanvasPiece(*squares)
-		# delete captured pawn or return captured pawn to original square
-		file = chess.square_file(ts)
-		rank = chess.square_rank(fs)
-		func(chess.square(file, rank))
+		if direction == 'forward':
+			squares = (fs, ts)
+			self.moveCanvasPiece(*squares)
+			file = chess.square_file(ts)
+			rank = chess.square_rank(fs)
+			self.deletePieceImage(chess.square(file,rank))
+		else:
+			squares = (ts, fs)
+			self.moveCanvasPiece(*squares)
+			file = chess.square_file(ts)
+			rank = chess.square_rank(fs)
+			self.putImage(chess.square(file, rank), direction)
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
