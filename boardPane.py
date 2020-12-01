@@ -14,12 +14,17 @@ from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 from infiniteAnalysis import infiniteAnalysis
 
+import pdb
+
 class boardPane:
 	def __init__(self, gui, pgnFile=None):
 		self.gui = gui
 		self.boardSize = 400
-		self.lightColorSq = "yellow"
-		self.darkColorSq = "brown"
+		self.settings = {
+			'lightColorSq' : "yellow",
+			'darkColorSq' : "brown",
+			'hlSqColor'	: 'black'
+		}
 		self.squares = []		# list of canvas ids for all canvas rectangles
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		# a dictonary of tkImage objects for each piece resized for current board
@@ -40,6 +45,12 @@ class boardPane:
 		self.varIdx = None
 		# The randomly generated name of any active blundercheck thread
 		self.activeBlunderCheck = None
+		# If a human move is in progress
+		# a list of tuples (x, y, z) where
+		# x: the canvas square id of the from piece with valid move
+		# y: the canvas square id of the to square where piece can go
+		# z: chess.move from x to y
+		self.MiP = []
 
 		self.setup()
 
@@ -56,12 +67,14 @@ class boardPane:
 
 	# insert current variations into the variation list box
 	def printVariations(self):
+		# pdb.set_trace()
 		self.variations.delete(0, tk.END)
 		for var in self.curNode.variations:
 			b=var.parent.board()
 			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
-			self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
-			self.variations.selection_set(0)
+			# self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
+			self.variations.insert(self.curNode.variations.index(var), f"{moveNo} {var.san()}")
+		self.variations.selection_set(0)
 
 	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
@@ -145,7 +158,8 @@ class boardPane:
 
 		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0, width=600)
+		cWidth = int(self.gui.screenW/2)
+		self.canvas = sqCanvas(self.boardFrame, highlightthickness=0, width=cWidth)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
@@ -171,6 +185,7 @@ class boardPane:
 		self.boardFrame.bind("<Configure>", self.resizeBoard)
 
 		# Board Canvas
+		self.canvas.bind("<Button-1>", self.canvasTouch)
 		self.canvas.pack()
 
 		# Analysis Frame
@@ -204,6 +219,111 @@ class boardPane:
 		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
 
+		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
+
+	def canvasTouch(self, e):
+		# get id of canvas item closest to click point
+		# if that item is tagged with 'piece', get the next item
+		# under that, i.e. the square
+		sqId = self.canvas.find_closest(e.x, e.y, 0, 'piece')[0]
+		# The 2nd tag of a square is always its name, i.e. 'e4'
+		sqName = self.canvas.gettags(sqId)[1]
+		# if is the second touch
+		if self.MiP:
+			# is this the same square clicked the last time?
+			# if so, we'll unhighlight everything and return
+			isSameSq = sqId == self.MiP[0][0]
+			# unhighlight the from square
+			self.canvas.itemconfigure(self.MiP[0][0], width=0)
+			# unhighlight each to square
+			for m in self.MiP:
+				# if this finishes one of the legal moves, make it!
+				if self.canvas.gettags(m[1])[1] == sqName:
+					self.makeHumanMove(m[2])
+				self.canvas.itemconfigure(m[1], width=0)
+			self.MiP = []
+			return
+
+		# if made it here, this is first touch
+		# iterate all the legal moves in the position.
+		for move in self.board.legal_moves:
+			if chess.square_name(move.from_square) == sqName:
+				fSqId = self.canvas.find_withtag(sqName)[0]
+				self.canvas.itemconfigure(fSqId, outline=self.settings['hlSqColor'], width=4)
+
+				tSqId = self.canvas.find_withtag(chess.square_name(move.to_square))[0]
+				self.canvas.itemconfigure(tSqId, outline=self.settings['hlSqColor'], width=4)
+
+				self.MiP.append((fSqId, tSqId, move))
+
+	def makeMoveOnCanvas(self, move, direction):
+		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant, isPromotion) = (self.board.is_castling(move),
+			self.board.is_kingside_castling(move),
+			self.board.is_capture(move),
+			self.board.is_en_passant(move),
+			move.promotion)
+
+		if isCaptureMove:
+			if isEnPassant:
+				self.enPassant(move, direction)
+			else:
+				self.capturing(move, direction)
+		elif isCastling:
+			self.castling(move, direction, isKingSideCastling)
+		else:
+			self.movePiece(move, direction)	# this is a normal move
+		if isPromotion:
+			self.promotion(move, direction) # promotion can either be by capture or normal move
+
+	def makeHumanMove(self, move):
+		self.makeMoveOnCanvas(move, 'forward')	
+		self.humanMovetoGameScore(move)
+		self.printVariations()
+		self.board=self.curNode.board()
+		if self.activeEngine != None:
+			infiniteAnalysis(self)
+
+	def humanMovetoGameScore(self, move):
+		# if the move is already a variation, update board as usual
+		if self.curNode.has_variation(move):
+			self.curNode = self.curNode.variation(move)
+			self.updateGameScore()
+		# otherwise, we need to add the variation
+		else:
+			self.gameScore.config(state='normal')
+			moveranges = self.gameScore.tag_ranges('move')
+			curNodeIndex = self.nodes.index(self.curNode)
+			self.board = self.curNode.board()
+			self.curNode = self.curNode.add_variation(move)
+			# if starting a variation, need to open paren before the next move,
+			# set mark between parens, and output first move
+			moveTxt = f"{self.curNode.san()}" 
+			if self.curNode.starts_variation():
+				insertPoint = moveranges[curNodeIndex*2+1]
+				moveNo = f"{self.board.fullmove_number}." if self.board.turn else f"{self.board.fullmove_number}..."
+				self.gameScore.tag_remove('curMove', '0.0', 'end')
+				# Bug: new variation should go before the next mainline move,
+				# not before the sibling variation.
+				self.gameScore.insert(insertPoint, ' ()')
+				# put varEnd mark between the ()
+				self.gameScore.mark_set('varEnd', f"{insertPoint}+2 c")
+				self.gameScore.insert('varEnd', moveNo)
+				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+				# add variation to node list
+				self.nodes.insert(curNodeIndex+2, self.curNode)
+			# if continuing a variation, need to add move at mark
+			else:
+				insertPoint = moveranges[curNodeIndex*2]
+				self.gameScore.mark_set('varEnd', f"{insertPoint}-2 c")
+				moveNo = f" {self.board.fullmove_number}." if self.board.turn else " "
+				self.gameScore.tag_remove('curMove', '0.0', 'end')
+				self.gameScore.insert('varEnd', moveNo)
+				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
+				# add variation to node list
+				self.nodes.insert(curNodeIndex+1, self.curNode)
+
+			self.gameScore.config(state='disabled')
+
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
 		nb = self.gui.notebook
@@ -220,9 +340,6 @@ class boardPane:
 
 	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
-		# pdb.set_trace()
-		# return focus to the main window so arrow keys continue to work
-		self.pWindow.focus_force()
 		moveIndices = []
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
@@ -260,15 +377,6 @@ class boardPane:
 		# update image cache to add piece at toSq and remove piece at fromSq
 		self.pieceImgCache[toSqName] = self.pieceImgCache[fromSqName]
 		self.pieceImgCache.pop(fromSqName)
-
-	def testMoveProperties(self, move):
-		return (
-			self.board.is_castling(move),
-			self.board.is_kingside_castling(move),
-			self.board.is_capture(move),
-			self.board.is_en_passant(move),
-			move.promotion		
-		)
 
 	def movePiece(self, move, direction):
 		ts,fs = move.to_square, move.from_square
@@ -323,7 +431,7 @@ class boardPane:
 	def createSquares(self):
 		file = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 		rank = ('8', '7', '6', '5', '4', '3', '2', '1')
-		sqColor = (self.lightColorSq, self.darkColorSq)
+		sqColor = (self.settings['lightColorSq'], self.settings['darkColorSq'])
 		for row in range(8):
 			for col in range(8):
 				sqName = str(file[col])+rank[row]
@@ -365,28 +473,14 @@ class boardPane:
 			varIdx = self.variations.curselection()[0]
 			self.curNode = self.curNode.variations[varIdx]
 			move = self.curNode.move
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-					isPromotion) = self.testMoveProperties(move)
+			self.makeMoveOnCanvas(move, direction)
 			self.board = self.curNode.board()
 		else:
 			if self.curNode == self.curNode.game(): return
 			move = self.curNode.move
 			self.board = self.curNode.parent.board()
-			(isCastling, isKingSideCastling, isCaptureMove, isEnPassant,
-				isPromotion) = self.testMoveProperties(move)
+			self.makeMoveOnCanvas(move, direction)
 			self.curNode=self.curNode.parent
-
-		if isCaptureMove:
-			if isEnPassant:
-				self.enPassant(move, direction)
-			else:
-				self.capturing(move, direction)
-		elif isCastling:
-			self.castling(move, direction, isKingSideCastling)
-		else:
-			self.movePiece(move, direction)	# this is a normal move
-		if isPromotion:
-			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 		self.updateGameScore()
 		self.printVariations()
@@ -433,3 +527,11 @@ class boardPane:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
+
+
+def main():
+	from gui import GUI
+	GUI()
+
+if __name__ == '__main__':
+	main()

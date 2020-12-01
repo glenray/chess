@@ -7,6 +7,7 @@ from tkinter import scrolledtext
 from boardPane import boardPane
 import pdb
 
+
 class GUI:
 	def __init__(self):
 		# a dictonary of pillow image objects for each piece png file
@@ -14,6 +15,7 @@ class GUI:
 		self.setup()
 
 	def setup(self):
+		self.winDpiScaling()
 		self.createWindow()
 		self.loadPieceImages()
 		self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
@@ -21,14 +23,26 @@ class GUI:
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
 
+	
+	# activates hi res monitor support on windows
+	def winDpiScaling(self):
+		try:
+			from ctypes import windll
+			windll.shcore.SetProcessDpiAwareness(1)
+		except:
+			pass
+
 	# create Window
 	def createWindow(self):
 		self.root = tk.Tk()
+		self.screenW = self.root.winfo_screenwidth()
+		self.screenH = self.root.winfo_screenheight()
+		# self.root.geometry(f"{int(self.screenW)}x{int(self.screenH)}")
 		self.root.title("Glen's Chess Analysis Wizard")
+		self.root.state('zoomed')
 		# self.root.attributes('-fullscreen', True)
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.bind("<Control-n>", self.openPGN)
-		self.root.geometry("1200x800+5+5")
 		# takefocus=False prevents tab from taking the focus on tab traversal
 		self.notebook = ttk.Notebook(self.root, takefocus=False)
 		self.notebook.enable_traversal()
@@ -37,6 +51,12 @@ class GUI:
 	def openPGN(self, e):
 		file = filedialog.askopenfilename()
 		self.addBoardPane(file)
+
+	def savePGN(self, game, nodes):
+		file = open("pgn/saved.pgn", 'w+')
+		print(game, file=file, end="\n\n")
+		print(nodes, file=file)
+
 
 	# Cache png image file for each piece
 	def loadPieceImages(self):
