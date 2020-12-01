@@ -97,18 +97,14 @@ class boardPane:
 			curIdx = curIdx-1
 			self.variations.selection_set(curIdx)
 
-	def setStartPos(self):
-		self.board.reset()
-		self.printCurrentBoard()
-
 	def printCurrentBoard(self):
-		self.board = self.curNode.board()
+		board = self.curNode.board()
 		self.canvas.delete('piece')
 		# piece_map returns a dictionary where 
 		# key is the square number and value is a piece object
 		# Square numbers start at 0 which is the bottom right square,
 		# home to the white light squared rook.
-		pm = self.board.piece_map()
+		pm = board.piece_map()
 		for key in pm:
 			self.putImage(key)
 
@@ -252,7 +248,8 @@ class boardPane:
 
 		# if made it here, this is first touch
 		# iterate all the legal moves in the position.
-		for move in self.board.legal_moves:
+		board=self.curNode.board()
+		for move in board.legal_moves:
 			if chess.square_name(move.from_square) == sqName:
 				fSqId = self.canvas.find_withtag(sqName)[0]
 				self.canvas.itemconfigure(fSqId, outline=self.settings['hlSqColor'], width=4)
@@ -263,10 +260,13 @@ class boardPane:
 				self.MiP.append((fSqId, tSqId, move))
 
 	def makeMoveOnCanvas(self, move, direction):
-		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant, isPromotion) = (self.board.is_castling(move),
-			self.board.is_kingside_castling(move),
-			self.board.is_capture(move),
-			self.board.is_en_passant(move),
+		# Internally, this move has been made already, so we need to look at the parent
+		# node to evaluate what kind of move it was.
+		board = self.curNode.parent.board()
+		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant, isPromotion) = (board.is_castling(move),
+			board.is_kingside_castling(move),
+			board.is_capture(move),
+			board.is_en_passant(move),
 			move.promotion)
 
 		if isCaptureMove:
@@ -285,7 +285,7 @@ class boardPane:
 		self.makeMoveOnCanvas(move, 'forward')	
 		self.humanMovetoGameScore(move)
 		self.printVariations()
-		self.board=self.curNode.board()
+		# self.board=self.curNode.board()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 
@@ -299,14 +299,14 @@ class boardPane:
 			self.gameScore.config(state='normal')
 			moveranges = self.gameScore.tag_ranges('move')
 			curNodeIndex = self.nodes.index(self.curNode)
-			self.board = self.curNode.board()
+			board = self.curNode.board()
 			self.curNode = self.curNode.add_variation(move)
 			# if starting a variation, need to open paren before the next move,
 			# set mark between parens, and output first move
 			moveTxt = f"{self.curNode.san()}" 
 			if self.curNode.starts_variation():
 				insertPoint = moveranges[curNodeIndex*2+1]
-				moveNo = f"{self.board.fullmove_number}." if self.board.turn else f"{self.board.fullmove_number}..."
+				moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
 				self.gameScore.tag_remove('curMove', '0.0', 'end')
 				# Bug: new variation should go before the next mainline move,
 				# not before the sibling variation.
@@ -321,7 +321,7 @@ class boardPane:
 			else:
 				insertPoint = moveranges[curNodeIndex*2]
 				self.gameScore.mark_set('varEnd', f"{insertPoint}-2 c")
-				moveNo = f" {self.board.fullmove_number}." if self.board.turn else " "
+				moveNo = f" {board.fullmove_number}." if board.turn else " "
 				self.gameScore.tag_remove('curMove', '0.0', 'end')
 				self.gameScore.insert('varEnd', moveNo)
 				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
@@ -498,11 +498,9 @@ class boardPane:
 			self.curNode = self.curNode.variations[varIdx]
 			move = self.curNode.move
 			self.makeMoveOnCanvas(move, direction)
-			self.board = self.curNode.board()
 		else:
 			if self.curNode == self.curNode.game(): return
 			move = self.curNode.move
-			self.board = self.curNode.parent.board()
 			self.makeMoveOnCanvas(move, direction)
 			self.curNode=self.curNode.parent
 
