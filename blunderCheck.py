@@ -244,10 +244,9 @@ class blunderCheck():
 
 	# after blundercheck completes, update gui before exit
 	def updateGUI(self, game):
-		self.boardPane.curNode = self.boardPane.nodes[0]
-		self.boardPane.game = game
 		# populating the text widget is wicked slow if it's visible
 		self.boardPane.gameScore.pack_forget()
+		self.boardPane.game = game
 		self.boardPane.game.accept(gameScoreVisitor(self.boardPane))
 		self.boardPane.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.boardPane.printCurrentBoard()

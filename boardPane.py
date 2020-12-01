@@ -111,7 +111,6 @@ class boardPane:
 		pm = self.board.piece_map()
 		for key in pm:
 			self.putImage(key)
-		print(f"Number of Pieces in Canvas: {len(self.canvas.find_withtag('piece'))}\n")
 
 	def putImage(self, square):
 		sqName = chess.square_name(square)
