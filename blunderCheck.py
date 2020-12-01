@@ -246,9 +246,9 @@ class blunderCheck():
 	def updateGUI(self, game):
 		# populating the text widget is wicked slow if it's visible
 		self.boardPane.gameScore.pack_forget()
+		self.boardPane.printCurrentBoard()
 		self.boardPane.game = game
 		self.boardPane.game.accept(gameScoreVisitor(self.boardPane))
 		self.boardPane.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.boardPane.printCurrentBoard()
 		self.boardPane.printVariations()
 		self.blWindow.destroy()
