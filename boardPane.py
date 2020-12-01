@@ -212,10 +212,14 @@ class boardPane:
 		self.gameScore.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
 		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		self.gameScore.tag_configure('curMove', foreground="white", background="red")
+		self.gameScore.bind('<Control-e>', self.toggleEngine)
+		self.gameScore.bind('<Control-b>', lambda e: blunderCheck(self))
 		self.gameScore.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.gameScore.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.gameScore.bind("<Down>", self.selectVariation)
 		self.gameScore.bind("<Up>", self.selectVariation)
+		self.gameScore.bind("<Control-o>", self.loadGameFile)
+		self.gameScore.bind("<Control-w>", self.removeTab)
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, stretch='always')
