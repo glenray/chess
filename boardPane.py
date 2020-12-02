@@ -250,8 +250,9 @@ class boardPane:
 			self.MiP = []
 			return
 
-		# if made it here, this is first touch
-		# iterate all the legal moves in the position.
+		# To make it here, this is first touch.
+		# Iterate all the legal moves in the position, 
+		# and highlight the potential landing squares
 		board=self.curNode.board()
 		for move in board.legal_moves:
 			if chess.square_name(move.from_square) == sqName:
@@ -286,8 +287,8 @@ class boardPane:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 	def makeHumanMove(self, move):
-		self.makeMoveOnCanvas(move, 'forward')	
 		self.humanMovetoGameScore(move)
+		self.makeMoveOnCanvas(move, 'forward')	
 		self.printVariations()
 		# self.board=self.curNode.board()
 		if self.activeEngine != None:
