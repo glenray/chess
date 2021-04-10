@@ -57,6 +57,7 @@ class blunderCheck():
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
 
 		self.blWindow = tk.Toplevel(self.boardPane.gui.root)
+		# self.blWindow.attributes('-alpha', .9)
 		self.blWindow.title("Blunder Check")
 		self.blWindow.bind("<Escape>", blunderOff)
 		self.blWindow.focus_force()
@@ -84,7 +85,7 @@ class blunderCheck():
 
 		# container for blunder check settings
 		self.settingFrame = tk.Frame(self.blWindow)
-		self.settingFrame.columnconfigure(0, minsize=100)
+		self.settingFrame.columnconfigure(0, minsize=150)
 		self.settingFrame.grid(row=2, column=1, sticky='nsew')
 		# blunder threshold in cp: 
 		self.threshLabel = tk.Label(self.settingFrame, text="Threshold")
@@ -109,10 +110,23 @@ class blunderCheck():
 		self.limitFrame.grid(row=5, column=1, sticky='w')
 		self.limitLabel = tk.Label(self.settingFrame, text="Limit Type")
 		self.limitLabel.grid(row=5, column=0, sticky='w')
-		self.depthRadio = tk.Radiobutton(self.limitFrame, value="depth", variable=self.limitType, text="Depth", command=self.limitTypeChange)
+		
+		# Use clam style to make radio button bigger
+		# There is a funky problem with dip awareness in windows making the radio
+		# buttons too small
+		style=ttk.Style(self.blWindow)
+		style.theme_use('clam')
+		# print(style.layout('TRadiobutton'))
+		# print(style.element_options('Radiobutton.border'))
+		# print(style.element_options('Radiobutton.padding'))
+		# print(style.element_options('Radiobutton.label'))
+		# print(style.element_options('Radiobutton.focus'))
+		style.configure('TRadiobutton', indicatorsize=25)
+
+		self.depthRadio = ttk.Radiobutton(self.limitFrame, value="depth", variable=self.limitType, text="Depth", command=self.limitTypeChange)
 		self.depthRadio.grid(row=0, column=1, sticky='w')
-		self.timeRadio = tk.Radiobutton(self.limitFrame, value="time", variable=self.limitType, text="Time", command=self.limitTypeChange)
-		self.timeRadio.grid(row=0, column=2, sticky='w')
+		self.timeRadio = ttk.Radiobutton(self.limitFrame, value="time", variable=self.limitType, text="Time", command=self.limitTypeChange)
+		self.timeRadio.grid(row=0, column=2, sticky='e')
 		# value of limit, either seconds for time or ply for depth
 		self.limitValLbl = tk.Label(self.settingFrame)
 		self.limitValLbl.grid(row=6, column=0, sticky='w')
@@ -122,7 +136,7 @@ class blunderCheck():
 
 	# Update limit value label when limit type radio button changes
 	def limitTypeChange(self, e=None):
-		text = "Depth in Ply" if self.limitType.get()=="depth" else "Time in Seconds"
+		text = "Ply" if self.limitType.get()=="depth" else "Seconds"
 		self.limitValLbl.configure(text=text)
 
 	# Spawns blunder check thread
