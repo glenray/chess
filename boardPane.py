@@ -14,8 +14,6 @@ from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 from infiniteAnalysis import infiniteAnalysis
 
-import pdb
-
 class boardPane:
 	def __init__(self, gui, pgnFile=None):
 		self.gui = gui
@@ -287,6 +285,7 @@ class boardPane:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 	def makeHumanMove(self, move):
+		breakpoint()
 		self.humanMovetoGameScore(move)
 		self.makeMoveOnCanvas(move, 'forward')	
 		self.printVariations()
