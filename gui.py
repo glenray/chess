@@ -15,10 +15,12 @@ class GUI:
 		self.setup()
 
 	def setup(self):
+		self.loadPieceImages()
 		self.winDpiScaling()
 		self.createWindow()
 		self.loadPieceImages()
-		self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
+		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
+		self.addBoardPane('pgn/Annotated_Games.pgn')
 		# bring focus to the active notebook
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
@@ -57,6 +59,11 @@ class GUI:
 		print(game, file=file, end="\n\n")
 		print(nodes, file=file)
 
+
+	# populate dictonary containing tk compatible piece images
+	def grabPieceImages(self, boardPane):
+		for name in self.pieceImg:
+			boardPane.tkPieceImg[name] = boardPane.resizePieceImage(self.pieceImg[name])
 
 	# Cache png image file for each piece
 	def loadPieceImages(self):
