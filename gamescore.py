@@ -1,6 +1,6 @@
 import tkinter as tk
 from blunderCheck import blunderCheck
-from infiniteAnalysis import infiniteAnalysis
+from analysis import infiniteAnalysis
 
 class Gamescore(tk.scrolledtext.ScrolledText):
 	def __init__(self, parent, boardPane):

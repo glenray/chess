@@ -6,11 +6,11 @@ from tkinter import filedialog
 import chess
 import chess.engine
 import chess.pgn
+from analysis import Analysis_text, infiniteAnalysis
 from sqCanvas import sqCanvas
 from gamescore import Gamescore
 from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
-from infiniteAnalysis import infiniteAnalysis
 
 class boardPane:
 	def __init__(self, gui, pgnFile=None):
@@ -114,7 +114,7 @@ class boardPane:
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
 		self.variations = tk.Listbox(self.analysisFrame, width=20, exportselection=False)
-		self.analysis = tk.Text(self.analysisFrame, height=10)
+		self.analysis = Analysis_text(self.analysisFrame, boardPane=self)
 		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
 
 		self.pWindow.bind('<Right>', lambda e: self.move(e, 'forward'))
@@ -145,10 +145,6 @@ class boardPane:
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 
 		# analysis text
-		self.analysis.config(wrap=tk.WORD)
-		self.analysis.bind('<FocusIn>', lambda e: self.pWindow.focus())
-		self.analysis.bind("<Down>", self.selectVariation)
-		self.analysis.bind("<Up>", self.selectVariation)
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 
 
