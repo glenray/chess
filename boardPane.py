@@ -2,13 +2,13 @@ import threading, random, string
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
-from tkinter import scrolledtext
 from tkinter import filedialog
 import chess
 import chess.engine
 import chess.pgn
 from sqCanvas import sqCanvas
 from sqCanvas import strings
+from gamescore import Gamescore
 from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 from infiniteAnalysis import infiniteAnalysis
@@ -121,7 +121,7 @@ class boardPane:
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
 		self.variations = tk.Listbox(self.analysisFrame, width=20, exportselection=False)
 		self.analysis = tk.Text(self.analysisFrame, height=10)
-		self.gameScore = tk.scrolledtext.ScrolledText(self.controlFrame, width=10, font=("Tahoma", 14))
+		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
 
 		self.pWindow.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.pWindow.bind('<Left>', lambda e: self.move(e, 'backward'))
@@ -147,6 +147,8 @@ class boardPane:
 		self.variations.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.variations.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.variations.pack(side=tk.LEFT)
+		
+		self.gameScore.pack(anchor='n', expand=True, fill='both')
 
 		# analysis text
 		self.analysis.config(wrap=tk.WORD)
@@ -155,21 +157,6 @@ class boardPane:
 		self.analysis.bind("<Up>", self.selectVariation)
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 
-		# game score
-		self.gameScore.config(wrap=tk.WORD, padx=10, pady=10, state='disabled')
-		self.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.gameScore.tag_bind('move', '<Button-1>', self.gameScoreClick)
-		self.gameScore.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
-		self.gameScore.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
-		self.gameScore.tag_configure('curMove', foreground="white", background="red")
-		self.gameScore.bind('<Control-e>', self.toggleEngine)
-		self.gameScore.bind('<Control-b>', lambda e: blunderCheck(self))
-		self.gameScore.bind('<Right>', lambda e: self.move(e, 'forward'))
-		self.gameScore.bind('<Left>', lambda e: self.move(e, 'backward'))
-		self.gameScore.bind("<Down>", self.selectVariation)
-		self.gameScore.bind("<Up>", self.selectVariation)
-		self.gameScore.bind("<Control-o>", self.loadGameFile)
-		self.gameScore.bind("<Control-w>", self.removeTab)
 
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, stretch='always')
@@ -215,7 +202,7 @@ class boardPane:
 		# if the move is already a variation, update board as usual
 		if self.curNode.has_variation(move):
 			self.curNode = self.curNode.variation(move)
-			self.updateGameScore()
+			self.gameScore.updateGameScore()
 		# otherwise, we need to add the variation
 		else:
 			# breakpoint()
@@ -288,7 +275,7 @@ class boardPane:
 		self.curNode = self.nodes[moveIndices.index(moveTagRange)+1]
 		self.canvas.printCurrentBoard()
 		self.printVariations()
-		self.updateGameScore()
+		self.gameScore.updateGameScore()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 
@@ -375,23 +362,10 @@ class boardPane:
 			self.makeMoveOnCanvas(move, direction)
 			self.curNode=self.curNode.parent
 
-		self.updateGameScore()
+		self.gameScore.updateGameScore()
 		self.printVariations()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
-
-	# emphasize current move in game score
-	def updateGameScore(self):
-		gs = self.gameScore
-		nodeIdx = self.nodes.index(self.curNode)
-		ranges = gs.tag_ranges('move')
-		if gs.tag_ranges('curMove'):
-			gs.tag_remove('curMove', 'curMove.first', 'curMove.last')
-		if nodeIdx: 
-			gs.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
-		# keep the current move visible in the game score
-		if gs.tag_ranges('curMove'):
-			gs.see('curMove.first')
 
 	# changes the cursor when hovering over a move in the game score
 	def cursorMove(self, status):
