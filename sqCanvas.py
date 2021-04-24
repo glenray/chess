@@ -169,6 +169,11 @@ class sqCanvas(Canvas):
 		pic[toSqName] = pic[fromSqName]
 		pic.pop(fromSqName)
 
+	def deletePieceImage(self, sq):
+		canvasIdx = self.boardPane.pieceImgCache[chess.square_name(sq)]
+		self.delete(canvasIdx)
+		del self.boardPane.pieceImgCache[chess.square_name(sq)]
+
 
 strings = {}
 strings['permAnalysis'] = '''Score	Depth	Nodes		NPS		Time

@@ -93,11 +93,6 @@ class boardPane:
 			curIdx = curIdx-1
 			self.variations.selection_set(curIdx)
 
-	def deletePieceImage(self, sq):
-		canvasIdx = self.pieceImgCache[chess.square_name(sq)]
-		self.canvas.delete(canvasIdx)
-		del self.pieceImgCache[chess.square_name(sq)]
-
 	def loadGameFile(self, e):
 		self.pgnFile = filedialog.askopenfilename()
 		file = open(self.pgnFile)
@@ -233,13 +228,13 @@ class boardPane:
 	def promotion(self, move, direction):
 		targetSq = move.to_square if direction == 'forward' else move.from_square
 		# if direction == 'forward' else move.from_square
-		self.deletePieceImage(targetSq)
+		self.canvas.deletePieceImage(targetSq)
 		self.canvas.putImage(targetSq, direction)
 
 	def capturing(self, move, direction):
 		ts,fs = move.to_square, move.from_square
 		if direction == 'forward':
-			self.deletePieceImage(ts)
+			self.canvas.deletePieceImage(ts)
 			self.canvas.moveCanvasPiece(fs, ts)
 		else:
 			self.canvas.moveCanvasPiece(ts, fs)
@@ -270,7 +265,7 @@ class boardPane:
 			self.canvas.moveCanvasPiece(*squares)
 			file = chess.square_file(ts)
 			rank = chess.square_rank(fs)
-			self.deletePieceImage(chess.square(file,rank))
+			self.canvas.deletePieceImage(chess.square(file,rank))
 		else:
 			squares = (ts, fs)
 			self.canvas.moveCanvasPiece(*squares)
