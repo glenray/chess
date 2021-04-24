@@ -7,11 +7,14 @@ Subclass of tkinter Canvas widget that maintains square aspect ratio
 6/7/2020: Glen Pritchard
 
 Sets the height and width of the canvas to its parent window/frame's shortest dimension.
+4/24/2021 Update: refactored boardPane module to move all canvas related code here (not just the code to mainain a square aspect ratio)
 '''
 class sqCanvas(Canvas):
-	def __init__(self,parent, boardPane, **kwargs):
+	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
-		Canvas.__init__(self,parent,**kwargs)
+		Canvas.__init__(self, parent)
+		cWidth = int(self.boardPane.gui.screenW/2)
+		self.configure(highlightthickness=0, width=cWidth)
 		self.bind("<Configure>", self.on_resize)
 		self.bind("<Button-1>", self.canvasTouch)
 		self.pack()
