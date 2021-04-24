@@ -173,9 +173,3 @@ class sqCanvas(Canvas):
 		canvasIdx = self.boardPane.pieceImgCache[chess.square_name(sq)]
 		self.delete(canvasIdx)
 		del self.boardPane.pieceImgCache[chess.square_name(sq)]
-
-
-strings = {}
-strings['permAnalysis'] = '''Score	Depth	Nodes		NPS		Time
-{score}	{depth}	{nodes:,}		{nps:,}		{time}
-{pvString}'''

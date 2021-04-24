@@ -7,7 +7,6 @@ import chess
 import chess.engine
 import chess.pgn
 from sqCanvas import sqCanvas
-from sqCanvas import strings
 from gamescore import Gamescore
 from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck

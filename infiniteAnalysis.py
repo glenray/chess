@@ -2,7 +2,10 @@ import threading, random, string
 import chess
 import chess.engine
 import chess.pgn
-from sqCanvas import strings
+
+analysisHeader = '''Score	Depth	Nodes		NPS		Time
+{score}	{depth}	{nodes:,}		{nps:,}		{time}
+{pvString}'''
 
 class infiniteAnalysis:
 	def __init__(self, boardPane):
@@ -37,7 +40,7 @@ class infiniteAnalysis:
 
 				pv = info.get('pv')
 				if pv != None and (len(pv) > 5 or info.get("score").is_mate()):
-					output = strings['permAnalysis'].format(
+					output = analysisHeader.format(
 						score = info.get("score").white(),
 						depth = info.get('depth'),
 						nps = info.get('nps'),
