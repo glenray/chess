@@ -191,57 +191,12 @@ class boardPane:
 			self.promotion(move, direction) # promotion can either be by capture or normal move
 
 	def makeHumanMove(self, move):
-		self.humanMovetoGameScore(move)
+		self.gameScore.humanMovetoGameScore(move)
 		self.makeMoveOnCanvas(move, 'forward')	
 		self.printVariations()
 		# self.board=self.curNode.board()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
-
-	def humanMovetoGameScore(self, move):
-		# if the move is already a variation, update board as usual
-		if self.curNode.has_variation(move):
-			self.curNode = self.curNode.variation(move)
-			self.gameScore.updateGameScore()
-		# otherwise, we need to add the variation
-		else:
-			# breakpoint()
-			self.gameScore.config(state='normal')
-			moveranges = self.gameScore.tag_ranges('move')
-			curNodeIndex = self.nodes.index(self.curNode)
-			board = self.curNode.board()
-			self.curNode = self.curNode.add_variation(move)
-			# if starting a variation, need to open paren before the next move,
-			# set mark between parens, and output first move
-			moveTxt = f"{self.curNode.san()}" 
-			if self.curNode.starts_variation():
-				insertPoint = moveranges[curNodeIndex*2+1]
-				moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
-				self.gameScore.tag_remove('curMove', '0.0', 'end')
-				# Bug: new variation should go before the next mainline move,
-				# not before the sibling variation.
-				self.gameScore.insert(insertPoint, ' ()')
-				# put varEnd mark between the ()
-				self.gameScore.mark_set('varEnd', f"{insertPoint}+2 c")
-				self.gameScore.insert('varEnd', moveNo)
-				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
-				# add variation to node list
-				self.nodes.insert(curNodeIndex+2, self.curNode)
-			# if continuing a variation, need to add move at mark
-			else:
-				# breakpoint()
-				insertPoint = moveranges[curNodeIndex*2]
-				offset = 2
-				endOfVar = f"{insertPoint}-{offset} c"
-				self.gameScore.mark_set('varEnd', endOfVar)
-				moveNo = f" {board.fullmove_number}." if board.turn else " "
-				self.gameScore.tag_remove('curMove', '0.0', 'end')
-				self.gameScore.insert('varEnd', moveNo)
-				self.gameScore.insert('varEnd', moveTxt, ('move', 'curMove'))
-				# add variation to node list
-				self.nodes.insert(curNodeIndex+1, self.curNode)
-
-			self.gameScore.config(state='disabled')
 
 	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
@@ -256,28 +211,6 @@ class boardPane:
 			panedWindowName = tabs[activeTabIdx]
 			# put focus on that paned window
 			self.gui.root.nametowidget(panedWindowName).focus()
-
-	# click on move in gamescore updates board to that move
-	def gameScoreClick(self, e):
-		moveIndices = []
-		# get text indicies of click location
-		location = f"@{e.x},{e.y}+1 chars"
-		# find the indices of the clicked move tag
-		moveTagRange = self.gameScore.tag_prevrange('move', location)
-		# tuple of begin and end indices for all move tags
-		ranges = self.gameScore.tag_ranges('move')
-		# convert range to pairs of tuples so they can be compared with moveTagRange
-		for x in range(0, len(ranges), 2):
-			moveIndices.append((str(ranges[x]), str(ranges[x+1])))
-		# set currentNode to the clicked move
-		# we add 1 because nodes[0] is the opening position which 
-		# is not represented as a move on the game score
-		self.curNode = self.nodes[moveIndices.index(moveTagRange)+1]
-		self.canvas.printCurrentBoard()
-		self.printVariations()
-		self.gameScore.updateGameScore()
-		if self.activeEngine != None:
-			infiniteAnalysis(self)
 
 	def movePiece(self, move, direction):
 		ts,fs = move.to_square, move.from_square
