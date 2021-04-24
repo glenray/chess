@@ -13,12 +13,13 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		self.tag_bind('move', '<Button-1>', self.gameScoreClick)
 		self.tag_bind('move', '<Enter>', lambda e: self.boardPane.cursorMove('enter'))
 		self.tag_bind('move', '<Leave>', lambda e: self.boardPane.cursorMove('leave'))
+		self.bind('<Control-r>', self.boardPane.canvas.reverseBoard)
 		self.bind('<Control-e>', self.boardPane.toggleEngine)
 		self.bind('<Control-b>', lambda e: blunderCheck(self.boardPane))
 		self.bind('<Right>', lambda e: self.boardPane.move(e, 'forward'))
 		self.bind('<Left>', lambda e: self.boardPane.move(e, 'backward'))
-		self.bind("<Down>", self.boardPane.selectVariation)
-		self.bind("<Up>", self.boardPane.selectVariation)
+		self.bind("<Down>", self.boardPane.variations.selectVariation)
+		self.bind("<Up>", self.boardPane.variations.selectVariation)
 		self.bind("<Control-o>", self.boardPane.loadGameFile)
 		self.bind("<Control-w>", self.boardPane.removeTab)
 		
@@ -51,7 +52,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		# is not represented as a move on the game score
 		self.boardPane.curNode = self.boardPane.nodes[moveIndices.index(moveTagRange)+1]
 		self.boardPane.canvas.printCurrentBoard()
-		self.boardPane.printVariations()
+		self.boardPane.variations.printVariations()
 		self.updateGameScore()
 		if self.boardPane.activeEngine != None:
 			infiniteAnalysis(self.boardPane)

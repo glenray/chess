@@ -264,5 +264,5 @@ class blunderCheck():
 		self.boardPane.game = game
 		self.boardPane.game.accept(gameScoreVisitor(self.boardPane))
 		self.boardPane.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.boardPane.printVariations()
+		self.boardPane.variations.printVariations()
 		self.blWindow.destroy()

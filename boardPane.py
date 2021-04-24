@@ -6,6 +6,7 @@ from tkinter import filedialog
 import chess
 import chess.engine
 import chess.pgn
+from variations import Variations
 from analysis import Analysis_text, infiniteAnalysis
 from sqCanvas import sqCanvas
 from gamescore import Gamescore
@@ -59,38 +60,7 @@ class boardPane:
 		self.canvas.positionSquares()
 		self.canvas.resizePieceImages()
 		self.canvas.printCurrentBoard()
-		self.printVariations()
-
-	# insert current variations into the variation list box
-	def printVariations(self):
-		self.variations.delete(0, tk.END)
-		for var in self.curNode.variations:
-			b=var.parent.board()
-			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
-			# self.variations.insert(self.nodes.index(var), f"{moveNo} {var.san()}")
-			self.variations.insert(self.curNode.variations.index(var), f"{moveNo} {var.san()}")
-		self.variations.selection_set(0)
-
-	# select a variation in the variations listbox using up/down arrows
-	def selectVariation(self, e):
-		variationsLength = len(self.variations.get(0, tk.END))
-		# quit if there are no variations, i.e. the end of a variation
-		if variationsLength == 0: return
-		curIdx = self.variations.curselection()[0]
-		isBottom = curIdx == variationsLength-1
-		isTop = curIdx == 0
-		# Down arrow
-		if e.keycode == 40:
-			if isBottom: return
-			self.variations.selection_clear(0, tk.END)
-			curIdx = curIdx+1
-			self.variations.selection_set(curIdx)
-		# Up arrow
-		elif e.keycode == 38:
-			if isTop: return
-			self.variations.selection_clear(0, tk.END)
-			curIdx = curIdx-1
-			self.variations.selection_set(curIdx)
+		self.variations.printVariations()
 
 	def loadGameFile(self, e):
 		self.pgnFile = filedialog.askopenfilename()
@@ -98,7 +68,7 @@ class boardPane:
 		self.game = chess.pgn.read_game(file)
 		self.game.accept(gameScoreVisitor(self))
 		self.canvas.printCurrentBoard()
-		self.printVariations()
+		self.variations.printVariations()
 
 	# create all tkinter widgets and event bindings
 	def createWidgets(self):
@@ -112,8 +82,7 @@ class boardPane:
 		self.canvas = sqCanvas(self.boardFrame, boardPane=self)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
-		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
-		self.variations = tk.Listbox(self.analysisFrame, width=20, exportselection=False)
+		self.variations = Variations(self.analysisFrame, boardPane=self)
 		self.analysis = Analysis_text(self.analysisFrame, boardPane=self)
 		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
 
@@ -123,8 +92,8 @@ class boardPane:
 		self.pWindow.bind('<Control-e>', self.toggleEngine)
 		# launch a blunder check class instance
 		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
-		self.pWindow.bind("<Down>", self.selectVariation)
-		self.pWindow.bind("<Up>", self.selectVariation)
+		self.pWindow.bind("<Down>", self.variations.selectVariation)
+		self.pWindow.bind("<Up>", self.variations.selectVariation)
 		self.pWindow.bind("<Control-o>", self.loadGameFile)
 		self.pWindow.bind("<Control-w>", self.removeTab)
 
@@ -138,8 +107,6 @@ class boardPane:
 		self.analysisFrame.pack(anchor='n', fill='x')
 
 		# variation list box
-		self.variations.bind('<Right>', lambda e: self.move(e, 'forward'))
-		self.variations.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.variations.pack(side=tk.LEFT)
 		
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
@@ -183,7 +150,7 @@ class boardPane:
 	def makeHumanMove(self, move):
 		self.gameScore.humanMovetoGameScore(move)
 		self.makeMoveOnCanvas(move, 'forward')	
-		self.printVariations()
+		self.variations.printVariations()
 		# self.board=self.curNode.board()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
@@ -286,7 +253,7 @@ class boardPane:
 			self.curNode=self.curNode.parent
 
 		self.gameScore.updateGameScore()
-		self.printVariations()
+		self.variations.printVariations()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 

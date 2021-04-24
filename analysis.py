@@ -17,8 +17,8 @@ class Analysis_text(tk.Text):
 
 		self.config(wrap=tk.WORD)
 		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
-		self.bind("<Down>", self.boardPane.selectVariation)
-		self.bind("<Up>", self.boardPane.selectVariation)
+		self.bind("<Down>", self.boardPane.variations.selectVariation)
+		self.bind("<Up>", self.boardPane.variations.selectVariation)
 
 class infiniteAnalysis:
 	def __init__(self, boardPane):
