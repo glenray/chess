@@ -61,6 +61,7 @@ class boardPane:
 		self.canvas.resizePieceImages()
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()
+		breakpoint()
 
 	def loadGameFile(self, e):
 		self.pgnFile = filedialog.askopenfilename()
@@ -159,22 +160,20 @@ class boardPane:
 		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
 		self.canvas.moveCanvasPiece(*sqs)
 
-	''' Promote a piece on the back rank
-	Forward: the pawn has already been moved to the queening square
-	and any captured piece has been removed.
-	On the self.curNode.board(), We need to 
-	1. delete the pawn on the queening square
-	2. put the appropriate piece in it's place
-
-	Backward: the promoted piece has already been moved back to the pawn's
-	pre-promotion position, and any taken piece returned to the queening square. 
-	On self.curNode.parent.board(), we need to
-	1. remove the promoted piece graphic on the 7th rank
-	2. replace it with a pawn
-	'''
 	def promotion(self, move, direction):
+		''' Promote a piece on the back rank
+		Forward: the pawn has already been moved to the queening square
+		and any captured piece has been removed.
+		On the self.curNode.board(), We need to 
+		1. delete the pawn on the queening square
+		2. put the appropriate piece in it's place
+
+		Backward: the promoted piece has already been moved back to the pawn's
+		pre-promotion position, and any taken piece returned to the queening square. 
+		On self.curNode.parent.board(), we need to
+		1. remove the promoted piece graphic on the 7th rank
+		2. replace it with a pawn'''
 		targetSq = move.to_square if direction == 'forward' else move.from_square
-		# if direction == 'forward' else move.from_square
 		self.canvas.deletePieceImage(targetSq)
 		self.canvas.putImage(targetSq, direction)
 
@@ -201,11 +200,11 @@ class boardPane:
 		self.canvas.moveCanvasPiece(kingFromSq, kingToSq)	# move king
 		self.canvas.moveCanvasPiece(rookFromSq, rookToSq)	# move rook
 	
-	# Update GUI for en passant move
-	# @ move obj move object
-	# @ direction str either 'forward' or 'backward', 
-	# 	depending on direction through move stack
 	def enPassant(self, move, direction):
+		'''Update GUI for en passant move
+		@ move obj move object
+		@ direction str either 'forward' or 'backward', 
+		depending on direction through move stack'''
 		ts,fs = move.to_square, move.from_square
 		if direction == 'forward':
 			squares = (fs, ts)
@@ -220,10 +219,9 @@ class boardPane:
 			rank = chess.square_rank(fs)
 			self.canvas.putImage(chess.square(file, rank), direction)
 
-	''' Event bindings '''
-	# Updates GUI after moving though game nodes both directions
-	# bound to left and right arrow keys at root
 	def move(self, e, direction):
+		'''Updates GUI after moving though game nodes both directions
+		bound to left and right arrow keys at root'''
 		if direction == 'forward':
 			if self.curNode.is_end(): return
 			# gets variation index from variation list box

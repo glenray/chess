@@ -20,11 +20,10 @@ class GUI:
 		self.createWindow()
 		self.loadPieceImages()
 		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
-		self.addBoardPane('pgn/Annotated_Games.pgn')
+		self.addBoardPane('pgn/startComment.pgn')
 		# bring focus to the active notebook
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
-
 	
 	# activates hi res monitor support on windows
 	def winDpiScaling(self):

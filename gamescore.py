@@ -6,7 +6,8 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
 		tk.scrolledtext.ScrolledText.__init__(self, parent)
-		self.config(wrap=tk.WORD, padx=10, pady=10, state='disabled', width=10, font=("Tahoma", 14))
+		self.config(wrap=tk.WORD, padx=10, pady=10, 
+			state='disabled', width=10, font=("Tahoma", 14))
 		self.tag_configure('curMove', foreground="white", background="red")
 		self.tag_bind('move', '<Button-1>', self.gameScoreClick)
 		self.tag_bind('move', '<Enter>', lambda e: self.boardPane.cursorMove('enter'))
@@ -90,5 +91,4 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 				self.insert('varEnd', moveTxt, ('move', 'curMove'))
 				# add variation to node list
 				self.boardPane.nodes.insert(curNodeIndex+1, self.boardPane.curNode)
-
 			self.config(state='disabled')
