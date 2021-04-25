@@ -61,7 +61,6 @@ class boardPane:
 		self.canvas.resizePieceImages()
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()
-		breakpoint()
 
 	def loadGameFile(self, e):
 		self.pgnFile = filedialog.askopenfilename()

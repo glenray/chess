@@ -7,7 +7,6 @@ including all variations and comments.
 '''
 class gameScoreVisitor(BaseVisitor):
 	def __init__(self, boardPane):
-		# pdb.set_trace()
 		self.startsVariation = False
 		self.endsVariation = False
 		self.boardPane = boardPane
@@ -31,21 +30,16 @@ class gameScoreVisitor(BaseVisitor):
 		gs.insert("end", eco)
 
 	def visit_move(self, board, move):
-		gs = self.boardPane.gameScore
 		if self.endsVariation:
 			self.endsVariation = False
 			self.currentNode = self.varStack.pop()
-			# delete last space after last move in variation
-			gs.delete('end-2 chars')
-			gs.insert("end", ") ")
 
 		if self.startsVariation:
 			self.startsVariation = False
 			if board.turn == False:
-				moveNo = f"{board.fullmove_number}..."
+				self.boardPane.gameScore.insert('end', f"{board.fullmove_number}...")
 			self.varStack.append(self.currentNode)
 			self.currentNode = self.currentNode.parent
-			gs.insert("end", "(")
 
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
@@ -56,17 +50,18 @@ class gameScoreVisitor(BaseVisitor):
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
 		gs.insert('end', f"{moveNo}")
 		# tag each move
-		gs.insert('end', f"{board.san(move)}", ('move',))
-		gs.insert('end', " ")
+		gs.insert('end', f"{board.san(move)}", ('move',), " ")
 
 	def begin_variation(self):
-		self.startsVariation = True
+		self.startsVariation=True
+		self.boardPane.gameScore.insert("end", "(")
 
 	def end_variation(self):
-		self.endsVariation = True
+		self.endsVariation=True
+		self.boardPane.gameScore.insert("end", ") ")
 
 	def visit_comment(self, comment):
-		c = f"{{{comment}}} ".replace('\n', ' ')
+		c = f" {{{comment}}} ".replace('\n', ' ')
 		self.boardPane.gameScore.insert('end', c)
 
 	def result(self):
