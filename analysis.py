@@ -13,12 +13,9 @@ class Analysis_text(tk.Text):
 	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
 		tk.Text.__init__(self, parent)
-		self.configure(height=10)
-
-		self.config(wrap=tk.WORD)
+		self.configure(height=10, wrap=tk.WORD)
+		# prevent variations from taking focus and blocking keyboard events
 		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
-		self.bind("<Down>", self.boardPane.variations.selectVariation)
-		self.bind("<Up>", self.boardPane.variations.selectVariation)
 
 class infiniteAnalysis:
 	def __init__(self, boardPane):

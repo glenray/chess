@@ -6,22 +6,13 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
 		tk.scrolledtext.ScrolledText.__init__(self, parent)
-
-		# game score
 		self.config(wrap=tk.WORD, padx=10, pady=10, state='disabled', width=10, font=("Tahoma", 14))
 		self.tag_configure('curMove', foreground="white", background="red")
 		self.tag_bind('move', '<Button-1>', self.gameScoreClick)
 		self.tag_bind('move', '<Enter>', lambda e: self.boardPane.cursorMove('enter'))
 		self.tag_bind('move', '<Leave>', lambda e: self.boardPane.cursorMove('leave'))
-		self.bind('<Control-r>', self.boardPane.canvas.reverseBoard)
-		self.bind('<Control-e>', self.boardPane.toggleEngine)
-		self.bind('<Control-b>', lambda e: blunderCheck(self.boardPane))
-		self.bind('<Right>', lambda e: self.boardPane.move(e, 'forward'))
-		self.bind('<Left>', lambda e: self.boardPane.move(e, 'backward'))
-		self.bind("<Down>", self.boardPane.variations.selectVariation)
-		self.bind("<Up>", self.boardPane.variations.selectVariation)
-		self.bind("<Control-o>", self.boardPane.loadGameFile)
-		self.bind("<Control-w>", self.boardPane.removeTab)
+		# prevent variations from taking focus and blocking keyboard events
+		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
 		
 	# emphasize current move in game score
 	def updateGameScore(self):
@@ -101,5 +92,3 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 				self.boardPane.nodes.insert(curNodeIndex+1, self.boardPane.curNode)
 
 			self.config(state='disabled')
-
-

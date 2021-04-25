@@ -6,9 +6,8 @@ class Variations(tk.Listbox):
 		tk.Listbox.__init__(self, parent)
 		# exportselection prevents selecting from the list box in one board pane from deselecting the others. https://github.com/PySimpleGUI/PySimpleGUI/issues/1158
 		self.configure(width=20, exportselection=False)
-
-		self.bind('<Right>', lambda e: self.boardPane.move(e, 'forward'))
-		self.bind('<Left>', lambda e: self.boardPane.move(e, 'backward'))
+		# prevent variations from taking focus and blocking keyboard events
+		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
 
 	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
