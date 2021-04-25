@@ -76,7 +76,7 @@ class boardPane:
 		# print(font.families())	prints available font families
 		buttonFont = font.Font(family="Tahoma", size=16)
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'groove', "font":buttonFont}
-
+		# Create all Widgets
 		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
 		self.canvas = sqCanvas(self.boardFrame, boardPane=self)
@@ -85,45 +85,30 @@ class boardPane:
 		self.variations = Variations(self.analysisFrame, boardPane=self)
 		self.analysis = Analysis_text(self.analysisFrame, boardPane=self)
 		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
-
+		# Events 
 		self.pWindow.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.pWindow.bind('<Left>', lambda e: self.move(e, 'backward'))
 		self.pWindow.bind('<Control-r>', self.canvas.reverseBoard)
 		self.pWindow.bind('<Control-e>', self.toggleEngine)
-		# launch a blunder check class instance
 		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
 		self.pWindow.bind("<Down>", self.variations.selectVariation)
 		self.pWindow.bind("<Up>", self.variations.selectVariation)
 		self.pWindow.bind("<Control-o>", self.loadGameFile)
 		self.pWindow.bind("<Control-w>", self.removeTab)
-
+		self.boardFrame.bind("<Configure>", self.canvas.resizeBoard)
+		# Insert pane into the parent notebook
 		self.gui.notebook.insert('end', self.pWindow, text="1 Board")
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
-
-		# Frame container for board canvas
-		self.boardFrame.bind("<Configure>", self.canvas.resizeBoard)
-
-		# Analysis Frame
+		# Pack
 		self.analysisFrame.pack(anchor='n', fill='x')
-
-		# variation list box
 		self.variations.pack(side=tk.LEFT)
-		
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
-
-		# analysis text
 		self.analysis.pack(anchor='n', expand=True, fill='both')
-
-
 		# Add widgets to paned window
 		self.pWindow.add(self.boardFrame, stretch='always')
 		self.pWindow.add(self.controlFrame, stretch='always')
 
 		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
-		self.gui.root.bind("<F12>", self.debugger)
-
-	def debugger(self, e):
-		breakpoint()
 
 	def makeMoveOnCanvas(self, move, direction):
 		# Internally, this move has been made already, so we need to look at the parent
@@ -270,7 +255,6 @@ class boardPane:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
-
 
 def main():
 	from gui import GUI

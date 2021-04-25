@@ -11,7 +11,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		self.tag_bind('move', '<Button-1>', self.gameScoreClick)
 		self.tag_bind('move', '<Enter>', lambda e: self.boardPane.cursorMove('enter'))
 		self.tag_bind('move', '<Leave>', lambda e: self.boardPane.cursorMove('leave'))
-		# prevent variations from taking focus and blocking keyboard events
+		# prevent gamescore from taking focus and blocking keyboard events
 		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
 		
 	# emphasize current move in game score
