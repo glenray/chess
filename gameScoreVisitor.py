@@ -2,7 +2,7 @@ from chess.pgn import BaseVisitor
 import pdb
 
 '''
-Called to populate gui.gameScore text widget with the game score,
+Called to populate gameScore text widget with the game score,
 including all variations and comments.
 '''
 class gameScoreVisitor(BaseVisitor):
@@ -30,16 +30,16 @@ class gameScoreVisitor(BaseVisitor):
 		gs.insert("end", eco)
 
 	def visit_move(self, board, move):
-		if self.endsVariation:
-			self.endsVariation = False
-			self.currentNode = self.varStack.pop()
-
 		if self.startsVariation:
 			self.startsVariation = False
 			if board.turn == False:
 				self.boardPane.gameScore.insert('end', f"{board.fullmove_number}...")
 			self.varStack.append(self.currentNode)
 			self.currentNode = self.currentNode.parent
+
+		if self.endsVariation:
+			self.endsVariation = False
+			self.currentNode = self.varStack.pop()
 
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)

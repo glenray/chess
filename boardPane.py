@@ -70,8 +70,8 @@ class boardPane:
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()
 
-	# create all tkinter widgets and event bindings
 	def createWidgets(self):
+		'''create all tkinter widgets and event bindings'''
 		# Fonts and Styling
 		# print(font.families())	prints available font families
 		buttonFont = font.Font(family="Tahoma", size=16)
@@ -110,38 +110,36 @@ class boardPane:
 
 		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
 
-	def makeMoveOnCanvas(self, move, direction):
-		# Internally, this move has been made already, so we need to look at the parent
-		# node to evaluate what kind of move it was.
-		board = self.curNode.parent.board()
-		(isCastling, isKingSideCastling, isCaptureMove, isEnPassant, isPromotion) = (board.is_castling(move),
-			board.is_kingside_castling(move),
-			board.is_capture(move),
-			board.is_en_passant(move),
-			move.promotion)
+	# def makeMoveOnCanvas(self, move, direction):
+	# 	# Internally, this move has been made already, so we need to look at the parent
+	# 	# node to evaluate what kind of move it was.
+	# 	board = self.curNode.parent.board()
+	# 	(
+	# 		isCastling, 
+	# 		isKingSideCastling, 
+	# 		isCaptureMove, 
+	# 		isEnPassant, 
+	# 		isPromotion) = (
+	# 		board.is_castling(move),
+	# 		board.is_kingside_castling(move),
+	# 		board.is_capture(move),
+	# 		board.is_en_passant(move),
+	# 		move.promotion)
 
-		if isCaptureMove:
-			if isEnPassant:
-				self.enPassant(move, direction)
-			else:
-				self.capturing(move, direction)
-		elif isCastling:
-			self.castling(move, direction, isKingSideCastling)
-		else:
-			self.movePiece(move, direction)	# this is a normal move
-		if isPromotion:
-			self.promotion(move, direction) # promotion can either be by capture or normal move
+	# 	if isCaptureMove:
+	# 		if isEnPassant:
+	# 			self.enPassant(move, direction)
+	# 		else:
+	# 			self.capturing(move, direction)
+	# 	elif isCastling:
+	# 		self.castling(move, direction, isKingSideCastling)
+	# 	else:
+	# 		self.movePiece(move, direction)	# this is a normal move
+	# 	if isPromotion:
+	# 		self.promotion(move, direction) # promotion can either be by capture or normal move
 
-	def makeHumanMove(self, move):
-		self.gameScore.humanMovetoGameScore(move)
-		self.makeMoveOnCanvas(move, 'forward')	
-		self.variations.printVariations()
-		# self.board=self.curNode.board()
-		if self.activeEngine != None:
-			infiniteAnalysis(self)
-
-	# Ctrl-w removes the tab; sets focuses on new current tab
 	def removeTab(self, e):
+		'''Ctrl-w removes the tab; sets focuses on new current tab'''
 		nb = self.gui.notebook
 		nb.forget('current')
 		tabs = nb.tabs()
@@ -226,12 +224,10 @@ class boardPane:
 			# gets variation index from variation list box
 			varIdx = self.variations.curselection()[0]
 			self.curNode = self.curNode.variations[varIdx]
-			move = self.curNode.move
-			self.makeMoveOnCanvas(move, direction)
+			self.canvas.makeMoveOnCanvas(self.curNode.move, direction)
 		else:
 			if self.curNode == self.curNode.game(): return
-			move = self.curNode.move
-			self.makeMoveOnCanvas(move, direction)
+			self.canvas.makeMoveOnCanvas(self.curNode.move, direction)
 			self.curNode=self.curNode.parent
 
 		self.gameScore.updateGameScore()
@@ -239,15 +235,15 @@ class boardPane:
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 
-	# changes the cursor when hovering over a move in the game score
 	def cursorMove(self, status):
+		# changes the cursor when hovering over a move in the game score
 		if status == 'leave':
 			self.gameScore.config(cursor='')
 		elif status == 'enter':
 			self.gameScore.config(cursor='hand2')
 
-	# toggles an engine to analyze the current board position
 	def toggleEngine(self, e):
+		# toggles an engine to analyze the current board position
 		if self.activeEngine == None:
 			infiniteAnalysis(self)
 		else:

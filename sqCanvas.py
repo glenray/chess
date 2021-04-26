@@ -85,11 +85,10 @@ class sqCanvas(Canvas):
 			for m in self.boardPane.MiP:
 				# if this finishes one of the legal moves, make it!
 				if self.gettags(m[1])[1] == sqName:
-					self.boardPane.makeHumanMove(m[2])
+					self.makeHumanMove(m[2])
 				self.itemconfigure(m[1], width=0)
 			self.boardPane.MiP = []
 			return
-
 		# To make it here, this is first touch.
 		# Iterate all the legal moves in the position, 
 		# and highlight the potential landing squares
@@ -103,6 +102,40 @@ class sqCanvas(Canvas):
 				self.itemconfigure(tSqId, outline=self.boardPane.settings['hlSqColor'], width=4)
 
 				self.boardPane.MiP.append((fSqId, tSqId, move))
+
+	def makeHumanMove(self, move):
+		self.boardPane.gameScore.humanMovetoGameScore(move)
+		self.makeMoveOnCanvas(move, 'forward')	
+		self.boardPane.variations.printVariations()
+		if self.boardPane.activeEngine != None:
+			infiniteAnalysis(self)
+
+	def makeMoveOnCanvas(self, move, direction):
+		# Internally, this move has been made already, so we need to look at the parent
+		# node to evaluate what kind of move it was.
+		board = self.boardPane.curNode.parent.board()
+		(
+			isCastling, 
+			isKingSideCastling, 
+			isCaptureMove, 
+			isEnPassant, 
+			isPromotion) = (
+			board.is_castling(move),
+			board.is_kingside_castling(move),
+			board.is_capture(move),
+			board.is_en_passant(move),
+			move.promotion)
+		if isCaptureMove:
+			if isEnPassant:
+				self.boardPane.enPassant(move, direction)
+			else:
+				self.boardPane.capturing(move, direction)
+		elif isCastling:
+			self.boardPane.castling(move, direction, isKingSideCastling)
+		else:
+			self.boardPane.movePiece(move, direction)	# this is a normal move
+		if isPromotion:
+			self.boardPane.promotion(move, direction) # promotion can either be by capture or normal move
 
 	# position squares in canvas based on current square size
 	# can build board with either color on bottom depending on
