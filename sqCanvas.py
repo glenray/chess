@@ -24,6 +24,12 @@ class sqCanvas(Canvas):
 		# a dictionary where key is square name and value is
 		# the canvas index corresponding to the piece on the square
 		self.pieceImgCache = {}
+		# If a human move is in progress
+		# a list of tuples (x, y, z) where
+		# x: the canvas square id of the from piece with valid move
+		# y: the canvas square id of the to square where piece can go
+		# z: chess.move from x to y
+		self.MiP = []
 		Canvas.__init__(self, parent)
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		cWidth = int(self.boardPane.gui.screenW/2)
@@ -88,19 +94,19 @@ class sqCanvas(Canvas):
 		# The 2nd tag of a square is always its name, i.e. 'e4'
 		sqName = self.gettags(sqId)[1]
 		# if is the second touch
-		if self.boardPane.MiP:
+		if self.MiP:
 			# is this the same square clicked the last time?
 			# if so, we'll unhighlight everything and return
-			isSameSq = sqId == self.boardPane.MiP[0][0]
+			isSameSq = sqId == self.MiP[0][0]
 			# unhighlight the from square
-			self.itemconfigure(self.boardPane.MiP[0][0], width=0)
+			self.itemconfigure(self.MiP[0][0], width=0)
 			# unhighlight each to square
-			for m in self.boardPane.MiP:
+			for m in self.MiP:
 				# if this finishes one of the legal moves, make it!
 				if self.gettags(m[1])[1] == sqName:
 					self.makeHumanMove(m[2])
 				self.itemconfigure(m[1], width=0)
-			self.boardPane.MiP = []
+			self.MiP = []
 			return
 		# To make it here, this is first touch.
 		# Iterate all the legal moves in the position, 
@@ -114,7 +120,7 @@ class sqCanvas(Canvas):
 				tSqId = self.find_withtag(chess.square_name(move.to_square))[0]
 				self.itemconfigure(tSqId, outline=self.settings['hlSqColor'], width=4)
 
-				self.boardPane.MiP.append((fSqId, tSqId, move))
+				self.MiP.append((fSqId, tSqId, move))
 
 	def makeHumanMove(self, move):
 		self.boardPane.gameScore.humanMovetoGameScore(move)
@@ -140,15 +146,80 @@ class sqCanvas(Canvas):
 			move.promotion)
 		if isCaptureMove:
 			if isEnPassant:
-				self.boardPane.enPassant(move, direction)
+				self.enPassant(move, direction)
 			else:
-				self.boardPane.capturing(move, direction)
+				self.capturing(move, direction)
 		elif isCastling:
-			self.boardPane.castling(move, direction, isKingSideCastling)
+			self.castling(move, direction, isKingSideCastling)
 		else:
-			self.boardPane.movePiece(move, direction)	# this is a normal move
+			self.movePiece(move, direction)	# this is a normal move
 		if isPromotion:
-			self.boardPane.promotion(move, direction) # promotion can either be by capture or normal move
+			self.promotion(move, direction) # promotion can either be by capture or normal move
+
+	def enPassant(self, move, direction):
+		'''Update GUI for en passant move
+		@ move obj move object
+		@ direction str either 'forward' or 'backward', 
+		depending on direction through move stack'''
+		ts,fs = move.to_square, move.from_square
+		if direction == 'forward':
+			squares = (fs, ts)
+			self.moveCanvasPiece(*squares)
+			file = chess.square_file(ts)
+			rank = chess.square_rank(fs)
+			self.deletePieceImage(chess.square(file,rank))
+		else:
+			squares = (ts, fs)
+			self.moveCanvasPiece(*squares)
+			file = chess.square_file(ts)
+			rank = chess.square_rank(fs)
+			self.putImage(chess.square(file, rank), direction)
+
+	def castling(self, move, direction, isKingSideCastling):
+		# locate rook rank and file (0 based)
+		fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
+		rank = chess.square_rank(move.to_square)
+		
+		if direction == 'forward':
+			kingFromSq, kingToSq = move.from_square, move.to_square
+			rookFromSq, rookToSq = chess.square(toFile, rank), chess.square(fromFile, rank)
+		else:
+			kingFromSq, kingToSq = move.to_square, move.from_square
+			rookFromSq, rookToSq = chess.square(fromFile, rank), chess.square(toFile, rank)
+		self.moveCanvasPiece(kingFromSq, kingToSq)	# move king
+		self.moveCanvasPiece(rookFromSq, rookToSq)	# move rook
+
+	def capturing(self, move, direction):
+		ts,fs = move.to_square, move.from_square
+		if direction == 'forward':
+			self.deletePieceImage(ts)
+			self.moveCanvasPiece(fs, ts)
+		else:
+			self.moveCanvasPiece(ts, fs)
+			self.putImage(ts, direction)
+
+	def promotion(self, move, direction):
+		''' Promote a piece on the back rank
+		Forward: the pawn has already been moved to the queening square
+		and any captured piece has been removed.
+		On the self.curNode.board(), We need to 
+		1. delete the pawn on the queening square
+		2. put the appropriate piece in it's place
+
+		Backward: the promoted piece has already been moved back to the pawn's
+		pre-promotion position, and any taken piece returned to the queening square. 
+		On self.curNode.parent.board(), we need to
+		1. remove the promoted piece graphic on the 7th rank
+		2. replace it with a pawn'''
+		targetSq = move.to_square if direction == 'forward' else move.from_square
+		self.deletePieceImage(targetSq)
+		self.putImage(targetSq, direction)
+
+
+	def movePiece(self, move, direction):
+		ts,fs = move.to_square, move.from_square
+		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
+		self.moveCanvasPiece(*sqs)
 
 	# position squares in canvas based on current square size
 	# can build board with either color on bottom depending on

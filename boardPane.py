@@ -29,12 +29,6 @@ class boardPane:
 		self.varIdx = None
 		# The randomly generated name of any active blundercheck thread
 		self.activeBlunderCheck = None
-		# If a human move is in progress
-		# a list of tuples (x, y, z) where
-		# x: the canvas square id of the from piece with valid move
-		# y: the canvas square id of the to square where piece can go
-		# z: chess.move from x to y
-		self.MiP = []
 		self.setup()
 
 	def setup(self):
@@ -65,9 +59,9 @@ class boardPane:
 		# Create all Widgets
 		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
 		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.canvas = sqCanvas(self.boardFrame, boardPane=self)
 		self.controlFrame = tk.Frame(self.pWindow)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
+		self.canvas = sqCanvas(self.boardFrame, boardPane=self)
 		self.variations = Variations(self.analysisFrame, boardPane=self)
 		self.analysis = Analysis_text(self.analysisFrame, boardPane=self)
 		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
@@ -87,7 +81,6 @@ class boardPane:
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 		# Pack
 		self.analysisFrame.pack(anchor='n', fill='x')
-		self.variations.pack(side=tk.LEFT)
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 		# Add widgets to paned window
@@ -109,70 +102,6 @@ class boardPane:
 			panedWindowName = tabs[activeTabIdx]
 			# put focus on that paned window
 			self.gui.root.nametowidget(panedWindowName).focus()
-
-	def movePiece(self, move, direction):
-		ts,fs = move.to_square, move.from_square
-		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
-		self.canvas.moveCanvasPiece(*sqs)
-
-	def promotion(self, move, direction):
-		''' Promote a piece on the back rank
-		Forward: the pawn has already been moved to the queening square
-		and any captured piece has been removed.
-		On the self.curNode.board(), We need to 
-		1. delete the pawn on the queening square
-		2. put the appropriate piece in it's place
-
-		Backward: the promoted piece has already been moved back to the pawn's
-		pre-promotion position, and any taken piece returned to the queening square. 
-		On self.curNode.parent.board(), we need to
-		1. remove the promoted piece graphic on the 7th rank
-		2. replace it with a pawn'''
-		targetSq = move.to_square if direction == 'forward' else move.from_square
-		self.canvas.deletePieceImage(targetSq)
-		self.canvas.putImage(targetSq, direction)
-
-	def capturing(self, move, direction):
-		ts,fs = move.to_square, move.from_square
-		if direction == 'forward':
-			self.canvas.deletePieceImage(ts)
-			self.canvas.moveCanvasPiece(fs, ts)
-		else:
-			self.canvas.moveCanvasPiece(ts, fs)
-			self.canvas.putImage(ts, direction)
-
-	def castling(self, move, direction, isKingSideCastling):
-		# locate rook rank and file (0 based)
-		fromFile, toFile  = (5,7) if isKingSideCastling else (3,0)
-		rank = chess.square_rank(move.to_square)
-		
-		if direction == 'forward':
-			kingFromSq, kingToSq = move.from_square, move.to_square
-			rookFromSq, rookToSq = chess.square(toFile, rank), chess.square(fromFile, rank)
-		else:
-			kingFromSq, kingToSq = move.to_square, move.from_square
-			rookFromSq, rookToSq = chess.square(fromFile, rank), chess.square(toFile, rank)
-		self.canvas.moveCanvasPiece(kingFromSq, kingToSq)	# move king
-		self.canvas.moveCanvasPiece(rookFromSq, rookToSq)	# move rook
-	
-	def enPassant(self, move, direction):
-		'''Update GUI for en passant move
-		@ move obj move object
-		@ direction str either 'forward' or 'backward', 
-		depending on direction through move stack'''
-		ts,fs = move.to_square, move.from_square
-		if direction == 'forward':
-			squares = (fs, ts)
-			self.canvas.moveCanvasPiece(*squares)
-			file = chess.square_file(ts)
-			rank = chess.square_rank(fs)
-			self.canvas.deletePieceImage(chess.square(file,rank))
-		else:
-			squares = (ts, fs)
-			self.canvas.moveCanvasPiece(*squares)
-			file = chess.square_file(ts)
-			rank = chess.square_rank(fs)
-			self.canvas.putImage(chess.square(file, rank), direction)
 
 	def move(self, e, direction):
 		'''Updates GUI after moving though game nodes both directions

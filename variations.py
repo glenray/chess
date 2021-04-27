@@ -8,6 +8,7 @@ class Variations(tk.Listbox):
 		self.configure(width=20, exportselection=False)
 		# prevent variations from taking focus and blocking keyboard events
 		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
+		self.pack(side=tk.LEFT)
 
 	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
