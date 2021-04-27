@@ -83,9 +83,11 @@ class boardPane(tk.PanedWindow):
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 		# Pack
 		self.analysisFrame.pack(anchor='n', fill='x')
+		self.variations.pack(side=tk.LEFT)
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.analysis.pack(anchor='n', expand=True, fill='both')
-		# Add widgets to paned window
+		self.canvas.pack()
+		# Add frames to paned window
 		self.add(self.boardFrame, stretch='always')
 		self.add(self.controlFrame, stretch='always')
 
@@ -134,8 +136,6 @@ class boardPane(tk.PanedWindow):
 		print(game, file=file, end="\n\n")
 		print(nodes, file=file)
 		file.close()
-
-
 
 def main():
 	from gui import GUI

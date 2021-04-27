@@ -36,7 +36,6 @@ class sqCanvas(Canvas):
 		self.configure(highlightthickness=0, width=cWidth)
 		self.bind("<Configure>", self.on_resize)
 		self.bind("<Button-1>", self.canvasTouch)
-		self.pack()
 
 	# resize the canvas as a square based on shortest dimension of master widget
 	def on_resize(self, e):
