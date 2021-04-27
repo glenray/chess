@@ -122,13 +122,6 @@ class boardPane:
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 
-	def cursorMove(self, status):
-		# changes the cursor when hovering over a move in the game score
-		if status == 'leave':
-			self.gameScore.config(cursor='')
-		elif status == 'enter':
-			self.gameScore.config(cursor='hand2')
-
 	def toggleEngine(self, e):
 		# toggles an engine to analyze the current board position
 		if self.activeEngine == None:

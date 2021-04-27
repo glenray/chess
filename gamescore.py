@@ -10,11 +10,18 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			state='disabled', width=10, font=("Tahoma", 14))
 		self.tag_configure('curMove', foreground="white", background="red")
 		self.tag_bind('move', '<Button-1>', self.gameScoreClick)
-		self.tag_bind('move', '<Enter>', lambda e: self.boardPane.cursorMove('enter'))
-		self.tag_bind('move', '<Leave>', lambda e: self.boardPane.cursorMove('leave'))
+		self.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
+		self.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		# prevent gamescore from taking focus and blocking keyboard events
 		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
 		
+	def cursorMove(self, status):
+		# changes the cursor when hovering over a move in the game score
+		if status == 'leave':
+			self.config(cursor='')
+		elif status == 'enter':
+			self.config(cursor='hand2')
+
 	# emphasize current move in game score
 	def updateGameScore(self):
 		nodeIdx = self.boardPane.nodes.index(self.boardPane.curNode)
