@@ -16,19 +16,6 @@ from blunderCheck import blunderCheck
 class boardPane:
 	def __init__(self, gui, pgnFile=None):
 		self.gui = gui
-		self.boardSize = 400
-		self.settings = {
-			'lightColorSq' : "yellow",
-			'darkColorSq' : "brown",
-			'hlSqColor'	: 'black'
-		}
-		self.squares = []		# list of canvas ids for all canvas rectangles
-		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
-		# a dictonary of tkImage objects for each piece resized for current board
-		self.tkPieceImg = {}
-		# a dictionary where key is square name and value is
-		# the canvas index corresponding to the piece on the square
-		self.pieceImgCache = {}
 		# randomly generated name of active engine thread
 		self.activeEngine = None
 		# list of nodes in mainline and all variations
@@ -48,7 +35,6 @@ class boardPane:
 		# y: the canvas square id of the to square where piece can go
 		# z: chess.move from x to y
 		self.MiP = []
-
 		self.setup()
 
 	def setup(self):
@@ -109,34 +95,6 @@ class boardPane:
 		self.pWindow.add(self.controlFrame, stretch='always')
 
 		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
-
-	# def makeMoveOnCanvas(self, move, direction):
-	# 	# Internally, this move has been made already, so we need to look at the parent
-	# 	# node to evaluate what kind of move it was.
-	# 	board = self.curNode.parent.board()
-	# 	(
-	# 		isCastling, 
-	# 		isKingSideCastling, 
-	# 		isCaptureMove, 
-	# 		isEnPassant, 
-	# 		isPromotion) = (
-	# 		board.is_castling(move),
-	# 		board.is_kingside_castling(move),
-	# 		board.is_capture(move),
-	# 		board.is_en_passant(move),
-	# 		move.promotion)
-
-	# 	if isCaptureMove:
-	# 		if isEnPassant:
-	# 			self.enPassant(move, direction)
-	# 		else:
-	# 			self.capturing(move, direction)
-	# 	elif isCastling:
-	# 		self.castling(move, direction, isKingSideCastling)
-	# 	else:
-	# 		self.movePiece(move, direction)	# this is a normal move
-	# 	if isPromotion:
-	# 		self.promotion(move, direction) # promotion can either be by capture or normal move
 
 	def removeTab(self, e):
 		'''Ctrl-w removes the tab; sets focuses on new current tab'''

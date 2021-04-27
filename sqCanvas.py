@@ -12,7 +12,20 @@ Sets the height and width of the canvas to its parent window/frame's shortest di
 class sqCanvas(Canvas):
 	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
+		self.boardSize = 400
+		self.squares = []		# list of canvas ids for all canvas rectangles
+		self.settings = {
+			'lightColorSq' : "yellow",
+			'darkColorSq' : "brown",
+			'hlSqColor'	: 'black'
+		}
+		# a dictonary of tkImage objects for each piece resized for current board
+		self.tkPieceImg = {}
+		# a dictionary where key is square name and value is
+		# the canvas index corresponding to the piece on the square
+		self.pieceImgCache = {}
 		Canvas.__init__(self, parent)
+		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		cWidth = int(self.boardPane.gui.screenW/2)
 		self.configure(highlightthickness=0, width=cWidth)
 		self.bind("<Configure>", self.on_resize)
@@ -48,15 +61,15 @@ class sqCanvas(Canvas):
 		piece = board.piece_at(square) 
 		# piece.symbol() returns the letter description for the piece, eg P or p  
 		pieceName = piece.symbol()
-		i=self.create_image((coords[0], coords[1]), image=self.boardPane.tkPieceImg[pieceName], anchor='nw', tag='piece')
-		self.boardPane.pieceImgCache[sqName] = i
+		i=self.create_image((coords[0], coords[1]), image=self.tkPieceImg[pieceName], anchor='nw', tag='piece')
+		self.pieceImgCache[sqName] = i
 
 
 	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
 		file = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 		rank = ('8', '7', '6', '5', '4', '3', '2', '1')
-		sqColor = (self.boardPane.settings['lightColorSq'], self.boardPane.settings['darkColorSq'])
+		sqColor = (self.settings['lightColorSq'], self.settings['darkColorSq'])
 		for row in range(8):
 			for col in range(8):
 				sqName = str(file[col])+rank[row]
@@ -65,7 +78,7 @@ class sqCanvas(Canvas):
 					fill=sqColor[(col+row)%2],
 					tag=('square', sqName)
 				)
-				self.boardPane.squares.append(sqId)
+				self.squares.append(sqId)
 
 	def canvasTouch(self, e):
 		# get id of canvas item closest to click point
@@ -96,10 +109,10 @@ class sqCanvas(Canvas):
 		for move in board.legal_moves:
 			if chess.square_name(move.from_square) == sqName:
 				fSqId = self.find_withtag(sqName)[0]
-				self.itemconfigure(fSqId, outline=self.boardPane.settings['hlSqColor'], width=4)
+				self.itemconfigure(fSqId, outline=self.settings['hlSqColor'], width=4)
 
 				tSqId = self.find_withtag(chess.square_name(move.to_square))[0]
-				self.itemconfigure(tSqId, outline=self.boardPane.settings['hlSqColor'], width=4)
+				self.itemconfigure(tSqId, outline=self.settings['hlSqColor'], width=4)
 
 				self.boardPane.MiP.append((fSqId, tSqId, move))
 
@@ -141,18 +154,18 @@ class sqCanvas(Canvas):
 	# can build board with either color on bottom depending on
 	# value of self.whiteSouth
 	def positionSquares(self):
-		sqSize = self.boardPane.boardSize/8
+		sqSize = self.boardSize/8
 		sqIds = 0
 		# set variables based on what side is on bottom of board
-		if self.boardPane.whiteSouth == True:
+		if self.whiteSouth == True:
 			xpos = ypos = xreset = 0
 			direction = sqSize
 		else:
-			xpos = ypos = xreset = self.boardPane.boardSize-sqSize
+			xpos = ypos = xreset = self.boardSize-sqSize
 			direction = -sqSize
 		for col in range(8):
 			for row in range(8):
-				self.coords(self.boardPane.squares[sqIds], xpos, ypos, xpos+sqSize, ypos+sqSize)
+				self.coords(self.squares[sqIds], xpos, ypos, xpos+sqSize, ypos+sqSize)
 				xpos += direction
 				sqIds+=1
 			ypos += direction
@@ -160,7 +173,7 @@ class sqCanvas(Canvas):
 
 	# when board is resized, resize the piece images so as not to lose resolution
 	def resizePieceImage(self, im):
-		dim = int(round(self.boardPane.boardSize/8))
+		dim = int(round(self.boardSize/8))
 		if int(dim)  <= 0: return
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
@@ -168,18 +181,18 @@ class sqCanvas(Canvas):
 
 	def resizePieceImages(self):
 		for name in self.boardPane.gui.pieceImg:
-			self.boardPane.tkPieceImg[name] = self.resizePieceImage(self.boardPane.gui.pieceImg[name])
+			self.tkPieceImg[name] = self.resizePieceImage(self.boardPane.gui.pieceImg[name])
 
 	# toggles white on north or south side of the board
 	# bound to Reverse Button
 	def reverseBoard(self, e=None):
-		self.boardPane.whiteSouth = not self.boardPane.whiteSouth
+		self.whiteSouth = not self.whiteSouth
 		self.positionSquares()
 		self.printCurrentBoard()
 
 	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
-		self.boardPane.boardSize = min(e.height, e.width)
+		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
 		self.resizePieceImages()
 		self.printCurrentBoard()
@@ -190,7 +203,7 @@ class sqCanvas(Canvas):
 	@ toSq obj chess.square object to relocate piece
 	'''
 	def moveCanvasPiece(self, fromSq, toSq):
-		csn, cc, pic = chess.square_name, self.coords, self.boardPane.pieceImgCache
+		csn, cc, pic = chess.square_name, self.coords, self.pieceImgCache
 		fromSqName, toSqName = csn(fromSq), csn(toSq)
 		fromSqCoords, toSqCoords = cc(fromSqName), cc(toSqName)
 		obj = pic[fromSqName]
@@ -203,6 +216,6 @@ class sqCanvas(Canvas):
 		pic.pop(fromSqName)
 
 	def deletePieceImage(self, sq):
-		canvasIdx = self.boardPane.pieceImgCache[chess.square_name(sq)]
+		canvasIdx = self.pieceImgCache[chess.square_name(sq)]
 		self.delete(canvasIdx)
-		del self.boardPane.pieceImgCache[chess.square_name(sq)]
+		del self.pieceImgCache[chess.square_name(sq)]
