@@ -13,9 +13,11 @@ from gamescore import Gamescore
 from gameScoreVisitor import gameScoreVisitor
 from blunderCheck import blunderCheck
 
-class boardPane:
-	def __init__(self, gui, pgnFile=None):
-		self.gui = gui
+class boardPane(tk.PanedWindow):
+	def __init__(self, parent, pgnFile=None):
+		tk.PanedWindow.__init__(self, parent.notebook)
+		self.config(orient="horizontal", sashwidth=10, sashrelief='raised')
+		self.gui = parent
 		# randomly generated name of active engine thread
 		self.activeEngine = None
 		# list of nodes in mainline and all variations
@@ -56,45 +58,43 @@ class boardPane:
 		# print(font.families())	prints available font families
 		buttonFont = font.Font(family="Tahoma", size=16)
 		buttonOptions = {"pady":5, "padx":5, "overrelief":'groove', "font":buttonFont}
-		# Create all Widgets
-		self.pWindow = tk.PanedWindow(self.gui.notebook, orient="horizontal", sashwidth=10, sashrelief='raised') 
-		self.boardFrame = tk.Frame(self.pWindow, bg="gray75")
-		self.controlFrame = tk.Frame(self.pWindow)
+		# Create child widgets
+		self.boardFrame = tk.Frame(self, bg="gray75")
+		self.controlFrame = tk.Frame(self)
 		self.analysisFrame = tk.Frame(self.controlFrame, bg="blue")
 		self.canvas = sqCanvas(self.boardFrame, boardPane=self)
 		self.variations = Variations(self.analysisFrame, boardPane=self)
 		self.analysis = Analysis_text(self.analysisFrame, boardPane=self)
 		self.gameScore = Gamescore(self.controlFrame, boardPane=self)
 		# Events 
-		self.pWindow.bind('<Right>', lambda e: self.move(e, 'forward'))
-		self.pWindow.bind('<Left>', lambda e: self.move(e, 'backward'))
-		self.pWindow.bind('<Control-r>', self.canvas.reverseBoard)
-		self.pWindow.bind('<Control-e>', self.toggleEngine)
-		self.pWindow.bind('<Control-b>', lambda e: blunderCheck(self))
-		self.pWindow.bind("<Down>", self.variations.selectVariation)
-		self.pWindow.bind("<Up>", self.variations.selectVariation)
-		self.pWindow.bind("<Control-o>", self.loadGameFile)
-		self.pWindow.bind("<Control-w>", self.removeTab)
+		self.bind('<Right>', lambda e: self.move(e, 'forward'))
+		self.bind('<Left>', lambda e: self.move(e, 'backward'))
+		self.bind('<Control-r>', self.canvas.reverseBoard)
+		self.bind('<Control-e>', self.toggleEngine)
+		self.bind('<Control-b>', lambda e: blunderCheck(self))
+		self.bind("<Down>", self.variations.selectVariation)
+		self.bind("<Up>", self.variations.selectVariation)
+		self.bind("<Control-o>", self.loadGameFile)
+		self.bind("<Control-w>", self.removeTab)
+		self.bind("<Control-s>", lambda e: self.savePGN(self.game, self.nodes))
 		self.boardFrame.bind("<Configure>", self.canvas.resizeBoard)
 		# Insert pane into the parent notebook
-		self.gui.notebook.insert('end', self.pWindow, text="1 Board")
+		self.gui.notebook.insert('end', self, text="1 Board")
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 		# Pack
 		self.analysisFrame.pack(anchor='n', fill='x')
 		self.gameScore.pack(anchor='n', expand=True, fill='both')
 		self.analysis.pack(anchor='n', expand=True, fill='both')
 		# Add widgets to paned window
-		self.pWindow.add(self.boardFrame, stretch='always')
-		self.pWindow.add(self.controlFrame, stretch='always')
-
-		self.gui.root.bind("<Control-s>", lambda e: self.gui.savePGN(self.game, self.nodes))
+		self.add(self.boardFrame, stretch='always')
+		self.add(self.controlFrame, stretch='always')
 
 	def removeTab(self, e):
 		'''Ctrl-w removes the tab; sets focuses on new current tab'''
 		nb = self.gui.notebook
 		nb.forget('current')
 		tabs = nb.tabs()
-		self.pWindow.destroy()
+		self.destroy()
 		# if there are other tabs, set focus to the one active
 		if tabs: 
 			activeTabIdx = nb.index('current')
@@ -128,6 +128,14 @@ class boardPane:
 			infiniteAnalysis(self)
 		else:
 			self.activeEngine = None
+
+	def savePGN(self, game, nodes):
+		file = open("pgn/saved.pgn", 'w+')
+		print(game, file=file, end="\n\n")
+		print(nodes, file=file)
+		file.close()
+
+
 
 def main():
 	from gui import GUI

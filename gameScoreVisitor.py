@@ -71,4 +71,4 @@ class gameScoreVisitor(BaseVisitor):
 		g=self.boardPane.game.headers
 		text = f"{g['White']} v {g['Black']}"
 		self.boardPane.gui.notebook.tab('current', text=text)
-		self.boardPane.pWindow.focus_force()
+		self.boardPane.focus_force()

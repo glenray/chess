@@ -53,17 +53,6 @@ class GUI:
 		file = filedialog.askopenfilename()
 		self.addBoardPane(file)
 
-	def savePGN(self, game, nodes):
-		file = open("pgn/saved.pgn", 'w+')
-		print(game, file=file, end="\n\n")
-		print(nodes, file=file)
-
-
-	# populate dictonary containing tk compatible piece images
-	def grabPieceImages(self, boardPane):
-		for name in self.pieceImg:
-			boardPane.tkPieceImg[name] = boardPane.resizePieceImage(self.pieceImg[name])
-
 	# Cache png image file for each piece
 	def loadPieceImages(self):
 		# map internal piece abbreviations to png file names on disk
