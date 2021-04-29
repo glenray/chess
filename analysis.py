@@ -15,7 +15,7 @@ class Analysis_text(tk.Text):
 		tk.Text.__init__(self, parent)
 		self.configure(height=10, wrap=tk.WORD)
 		# prevent text box from taking focus and blocking keyboard events
-		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
+		self.bind('<FocusIn>', lambda e: self.boardPane.focus())
 
 class infiniteAnalysis:
 	def __init__(self, boardPane):

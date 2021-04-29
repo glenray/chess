@@ -13,8 +13,8 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		self.tag_bind('move', '<Enter>', lambda e: self.cursorMove('enter'))
 		self.tag_bind('move', '<Leave>', lambda e: self.cursorMove('leave'))
 		# prevent gamescore from taking focus and blocking keyboard events
-		self.bind('<FocusIn>', lambda e: self.boardPane.pWindow.focus())
-		
+		self.bind('<FocusIn>', lambda e: self.boardPane.focus())
+
 	def cursorMove(self, status):
 		# changes the cursor when hovering over a move in the game score
 		if status == 'leave':
@@ -22,8 +22,8 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		elif status == 'enter':
 			self.config(cursor='hand2')
 
-	# emphasize current move in game score
 	def updateGameScore(self):
+		# emphasize current move in game score
 		nodeIdx = self.boardPane.nodes.index(self.boardPane.curNode)
 		ranges = self.tag_ranges('move')
 		if self.tag_ranges('curMove'):
@@ -34,8 +34,8 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		if self.tag_ranges('curMove'):
 			self.see('curMove.first')
 
-	# click on move in gamescore updates board to that move
 	def gameScoreClick(self, e):
+		# click on move in gamescore updates board to that move
 		moveIndices = []
 		# get text indicies of click location
 		location = f"@{e.x},{e.y}+1 chars"
@@ -57,13 +57,13 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			infiniteAnalysis(self.boardPane)
 
 	def humanMovetoGameScore(self, move):
+		breakpoint()
 		# if the move is already a variation, update board as usual
 		if self.boardPane.curNode.has_variation(move):
-			self.boardPane.curNode = self.boarPane.curNode.variation(move)
+			self.boardPane.curNode = self.boardPane.curNode.variation(move)
 			self.updateGameScore()
 		# otherwise, we need to add the variation
 		else:
-			# breakpoint()
 			self.config(state='normal')
 			moveranges = self.tag_ranges('move')
 			curNodeIndex = self.boardPane.nodes.index(self.boardPane.curNode)
@@ -73,6 +73,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			# set mark between parens, and output first move
 			moveTxt = f"{self.boardPane.curNode.san()}" 
 			if self.boardPane.curNode.starts_variation():
+				breakpoint()
 				insertPoint = moveranges[curNodeIndex*2+1]
 				moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
 				self.tag_remove('curMove', '0.0', 'end')
@@ -80,13 +81,13 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 				# not before the sibling variation.
 				self.insert(insertPoint, ' ()')
 				# put varEnd mark between the ()
-				self.mark_set('varEnd', f"{insertPoint}+2 c")
+				self.mark_set('varEnd', f"{insertPoint}+3 c")
 				self.insert('varEnd', moveNo)
 				self.insert('varEnd', moveTxt, ('move', 'curMove'))
 				# add variation to node list
 				self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
-			# if continuing a variation, need to add move at mark
 			else:
+				# if continuing a variation, need to add move at mark
 				# breakpoint()
 				insertPoint = moveranges[curNodeIndex*2]
 				offset = 2
