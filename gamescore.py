@@ -106,14 +106,14 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 	def outputMove(self, board, move, currentNode, location='end'):
 		# breakpoint()
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
+		# black moves separated from its white counterpart by comment
+		# or variation will have move number and elipses pre-pended.
 		isBlkTurn = board.turn == False
-		blkMoveAfterComment = len(currentNode.parent.comment) > 0
-		blkMoveAfterVar = ((currentNode.parent.parent != None)  
+		isMoveAfterComment = len(currentNode.parent.comment) > 0
+		isMoveAfterVar = ((currentNode.parent.parent != None)  
 			and (len(currentNode.parent.parent.variations)>1)
 			and (board.turn == False))
-
-
-		if isBlkTurn and (blkMoveAfterComment or blkMoveAfterVar):
+		if isBlkTurn and (isMoveAfterComment or isMoveAfterVar):
 			moveNo = f"{board.fullmove_number}..."
 
 		self.insert(location, f"{moveNo}")
