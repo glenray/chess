@@ -18,22 +18,14 @@ class gameScoreVisitor(BaseVisitor):
 		self.boardPane.nodes = [self.currentNode]
 
 	def end_headers(self):
-		gs = self.boardPane.gameScore
-		gs.config(state='normal')
-		self.boardPane.gameScore.delete('1.0', 'end')
-		g=self.boardPane.game.headers
-		whiteElo = f" ({g['WhiteElo']})" if 'WhiteElo' in g else ''
-		blackElo = f" ({g['BlackElo']})" if 'BlackElo' in g else ''
-		gameTitle = f"{g['White']}{whiteElo} vs. {g['Black']}{blackElo}"
-		eco = f"\nECO: {g['ECO']}\n\n" if 'ECO' in g else '\n\n'
-		gs.insert("end", gameTitle)
-		gs.insert("end", eco)
+		self.boardPane.gameScore.outputHeaders()
+		
 
 	def visit_move(self, board, move):
 		if self.startsVariation:
 			self.startsVariation = False
-			if board.turn == False:
-				self.boardPane.gameScore.insert('end', f"{board.fullmove_number}...")
+			# if board.turn == False:
+			# 	self.boardPane.gameScore.insert('end', f"{board.fullmove_number}...")
 			self.varStack.append(self.currentNode)
 			self.currentNode = self.currentNode.parent
 
@@ -43,14 +35,7 @@ class gameScoreVisitor(BaseVisitor):
 
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
-		self.outputMove(board, move)
-
-	def outputMove(self, board, move):
-		gs = self.boardPane.gameScore
-		moveNo = f"{board.fullmove_number}." if board.turn else ""
-		gs.insert('end', f"{moveNo}")
-		# tag each move
-		gs.insert('end', f"{board.san(move)}", ('move',), " ")
+		self.boardPane.gameScore.outputMove(board, move, self.currentNode)
 
 	def begin_variation(self):
 		self.startsVariation=True

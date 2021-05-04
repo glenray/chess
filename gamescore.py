@@ -85,10 +85,11 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.updateGameScore()
 		# otherwise, we need to add the variation
 		else:
+			# breakpoint()
 			insertPoint, curNodeIndex = self.getInsertPoint(self.boardPane.curNode)
+			board = self.boardPane.curNode.board()
 			self.boardPane.curNode = self.boardPane.curNode.add_variation(move)
 			moveTxt = f"{self.boardPane.curNode.san()}" 
-			board = self.boardPane.curNode.board()
 			moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
 			self.tag_remove('curMove', '0.0', 'end')
 			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
@@ -99,5 +100,34 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.insert('varEnd', f' {moveNo}')
 			self.insert('varEnd', moveTxt, ('move', 'curMove'))
 			if self.boardPane.curNode.starts_variation():
-				self.insert('varEnd', ' )')
+				self.insert('varEnd', ')')
 			self.config(state='disabled')
+
+	def outputMove(self, board, move, currentNode, location='end'):
+		# breakpoint()
+		moveNo = f"{board.fullmove_number}." if board.turn else ""
+		isBlkTurn = board.turn == False
+		blkMoveAfterComment = len(currentNode.parent.comment) > 0
+		blkMoveAfterVar = ((currentNode.parent.parent != None)  
+			and (len(currentNode.parent.parent.variations)>1)
+			and (board.turn == False))
+
+
+		if isBlkTurn and (blkMoveAfterComment or blkMoveAfterVar):
+			moveNo = f"{board.fullmove_number}..."
+
+		self.insert(location, f"{moveNo}")
+		# tag each move
+		self.insert(location, f"{board.san(move)}", ('move',), " ")
+
+
+	def outputHeaders(self):
+		self.config(state='normal')
+		self.delete('1.0', 'end')
+		g=self.boardPane.game.headers
+		whiteElo = f" ({g['WhiteElo']})" if 'WhiteElo' in g else ''
+		blackElo = f" ({g['BlackElo']})" if 'BlackElo' in g else ''
+		gameTitle = f"{g['White']}{whiteElo} vs. {g['Black']}{blackElo}"
+		eco = f"\nECO: {g['ECO']}\n\n" if 'ECO' in g else '\n\n'
+		self.insert("end", gameTitle)
+		self.insert("end", eco)
