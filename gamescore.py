@@ -56,47 +56,48 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		if self.boardPane.activeEngine != None:
 			infiniteAnalysis(self.boardPane)
 
+	def getInsertPoint(self, node):
+		offset = 0
+		moveranges = self.tag_ranges('move')
+		if len(node.variations) == 0:
+			myNode = node
+		else:
+			myNode = node.variations[-1]
+
+		# new variation goes behind existing sub variations
+		if len(node.variations)>1:
+			myNode = myNode.end()
+			offset += 3
+
+		nodeIdx = self.boardPane.nodes.index(myNode)-1
+
+		begin, end = moveranges[(nodeIdx*2)], moveranges[(nodeIdx*2)+1]
+		commentLen = len(myNode.comment)
+		if commentLen>0:
+			offset += 4
+		end = f"{end}+{str(commentLen+offset)} chars"
+		return end, nodeIdx
+
 	def humanMovetoGameScore(self, move):
-		breakpoint()
 		# if the move is already a variation, update board as usual
 		if self.boardPane.curNode.has_variation(move):
 			self.boardPane.curNode = self.boardPane.curNode.variation(move)
 			self.updateGameScore()
 		# otherwise, we need to add the variation
 		else:
-			self.config(state='normal')
-			moveranges = self.tag_ranges('move')
-			curNodeIndex = self.boardPane.nodes.index(self.boardPane.curNode)
-			board = self.boardPane.curNode.board()
+			insertPoint, curNodeIndex = self.getInsertPoint(self.boardPane.curNode)
 			self.boardPane.curNode = self.boardPane.curNode.add_variation(move)
-			# if starting a variation, need to open paren before the next move,
-			# set mark between parens, and output first move
 			moveTxt = f"{self.boardPane.curNode.san()}" 
+			board = self.boardPane.curNode.board()
+			moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
+			self.tag_remove('curMove', '0.0', 'end')
+			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
+			self.config(state='normal')
+			self.mark_set('varEnd', insertPoint)
 			if self.boardPane.curNode.starts_variation():
-				breakpoint()
-				insertPoint = moveranges[curNodeIndex*2+1]
-				moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
-				self.tag_remove('curMove', '0.0', 'end')
-				# Bug: new variation should go before the next mainline move,
-				# not before the sibling variation.
-				self.insert(insertPoint, ' ()')
-				# put varEnd mark between the ()
-				self.mark_set('varEnd', f"{insertPoint}+3 c")
-				self.insert('varEnd', moveNo)
-				self.insert('varEnd', moveTxt, ('move', 'curMove'))
-				# add variation to node list
-				self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
-			else:
-				# if continuing a variation, need to add move at mark
-				# breakpoint()
-				insertPoint = moveranges[curNodeIndex*2]
-				offset = 2
-				endOfVar = f"{insertPoint}-{offset} c"
-				self.mark_set('varEnd', endOfVar)
-				moveNo = f" {board.fullmove_number}." if board.turn else " "
-				self.tag_remove('curMove', '0.0', 'end')
-				self.insert('varEnd', moveNo)
-				self.insert('varEnd', moveTxt, ('move', 'curMove'))
-				# add variation to node list
-				self.boardPane.nodes.insert(curNodeIndex+1, self.boardPane.curNode)
+				self.insert('varEnd', ' (')
+			self.insert('varEnd', f' {moveNo}')
+			self.insert('varEnd', moveTxt, ('move', 'curMove'))
+			if self.boardPane.curNode.starts_variation():
+				self.insert('varEnd', ' )')
 			self.config(state='disabled')

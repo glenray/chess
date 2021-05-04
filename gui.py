@@ -5,8 +5,6 @@ from tkinter import filedialog
 from tkinter import font
 from tkinter import scrolledtext
 from boardPane import boardPane
-import pdb
-
 
 class GUI:
 	def __init__(self):
