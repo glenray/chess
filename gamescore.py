@@ -90,8 +90,6 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.outputMove(move, self.boardPane.curNode, 'varEnd')
 
 	def outputMove(self, move, currentNode, location='end'):
-		# if location != 'end':
-		# 	breakpoint()
 		board = currentNode.parent.board()
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
 		# prepend the move number and elipsis to black's move if:
@@ -122,7 +120,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		# how do we know that currentNode's parent used to be at the end of this variation so as not to append a duplicate ')'?
 		if (currentNode and 
 			currentNode.starts_variation() and
-			# for now, we won't try to close variation when using gamescorevisitor
+			# TODO: for now, we won't try to close variation when gameScoreVisitor sets the location to end. gameScoreVisitor will add the closing ')'. Otherwise, the remaining moves in the variation will end up outside the parens.
 			not location == 'end'
 			):
 			self.insert(location, ') ')
