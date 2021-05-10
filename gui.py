@@ -22,17 +22,17 @@ class GUI:
 		# bring focus to the active notebook
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
-	
-	# activates hi res monitor support on windows
+
 	def winDpiScaling(self):
+		# activates hi res monitor support on windows
 		try:
 			from ctypes import windll
 			windll.shcore.SetProcessDpiAwareness(1)
 		except:
 			pass
 
-	# create Window
 	def createWindow(self):
+		# create Window
 		self.root = tk.Tk()
 		self.screenW = self.root.winfo_screenwidth()
 		self.screenH = self.root.winfo_screenheight()
@@ -51,11 +51,13 @@ class GUI:
 		file = filedialog.askopenfilename()
 		self.addBoardPane(file)
 
-	# Cache png image file for each piece
 	def loadPieceImages(self):
-		# map internal piece abbreviations to png file names on disk
-		# key: the piece abbreviation: p=black pawn; P=white pawn, etc
-		# The values are the png image file names without the extension: eg bp.png
+		'''
+		Cache png image file for each piece
+		map internal piece abbreviations to png file names on disk
+		key: the piece abbreviation: p=black pawn; P=white pawn, etc
+		The values are the png image file names without the extension: eg bp.png
+		'''
 		pieceNames = {'p':'bp', 'r':'br', 'n':'bn', 'b':'bb', 'q':'bq', 'k':'bk', 'P':'wp', 'R':'wr', 'N':'wn', 'B':'wb', 'Q':'wq', 'K':'wk'}
 		for name in pieceNames:
 			self.pieceImg[name] = Image.open(f'img/png/{pieceNames[name]}.png')

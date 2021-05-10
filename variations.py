@@ -9,8 +9,8 @@ class Variations(tk.Listbox):
 		# prevent variations from taking focus and blocking keyboard events
 		self.bind('<FocusIn>', lambda e: self.boardPane.focus())
 
-	# select a variation in the variations listbox using up/down arrows
 	def selectVariation(self, e):
+		# select a variation in the variations listbox using up/down arrows
 		variationsLength = len(self.get(0, tk.END))
 		# quit if there are no variations, i.e. the end of a variation
 		if variationsLength == 0: return
@@ -30,12 +30,11 @@ class Variations(tk.Listbox):
 			curIdx = curIdx-1
 			self.selection_set(curIdx)
 
-	# insert current variations into the variation list box
 	def printVariations(self):
+		# insert current variations into the variation list box
 		self.delete(0, tk.END)
 		for var in self.boardPane.curNode.variations:
 			b=var.parent.board()
 			moveNo = b.fullmove_number if b.turn==True else f'{b.fullmove_number}...'
 			self.insert(self.boardPane.curNode.variations.index(var), f"{moveNo} {var.san()}")
 		self.selection_set(0)
-

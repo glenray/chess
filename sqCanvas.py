@@ -2,14 +2,14 @@ from PIL import Image, ImageTk
 from tkinter import Canvas
 import chess
 
-'''
-Subclass of tkinter Canvas widget that maintains square aspect ratio
-6/7/2020: Glen Pritchard
-
-Sets the height and width of the canvas to its parent window/frame's shortest dimension.
-4/24/2021 Update: refactored boardPane module to move all canvas related code here (not just the code to mainain a square aspect ratio)
-'''
 class sqCanvas(Canvas):
+	'''
+	Subclass of tkinter Canvas widget that maintains square aspect ratio
+	6/7/2020: Glen Pritchard
+
+	Sets the height and width of the canvas to its parent window/frame's shortest dimension.
+	4/24/2021 Update: refactored boardPane module to move all canvas related code here (not just the code to mainain a square aspect ratio)
+	'''
 	def __init__(self, parent, boardPane):
 		self.boardPane = boardPane
 		self.boardSize = 400
@@ -37,8 +37,8 @@ class sqCanvas(Canvas):
 		self.bind("<Configure>", self.on_resize)
 		self.bind("<Button-1>", self.canvasTouch)
 
-	# resize the canvas as a square based on shortest dimension of master widget
 	def on_resize(self, e):
+		# resize the canvas as a square based on shortest dimension of master widget
 		side = min(self.master.winfo_width(), self.master.winfo_height())
 		self.config(width=side, height=side)
 
@@ -53,13 +53,13 @@ class sqCanvas(Canvas):
 		for key in pm:
 			self.putImage(key)
 
-	# Put a new piece on the board
-	# In a regular game, this may be because a piece has been promoted or 
-	# a backward move puts a taken piece back on the board
-	# A board is created to represent the current state of the board that 
-	# needs to be mimiced in the GUI. In the event of a backward move, 
-	# that the the parent of the current node.
 	def putImage(self, square, direction='forward'):
+		'''Put a new piece on the board
+		In a regular game, this may be because a piece has been promoted or 
+		a backward move puts a taken piece back on the board
+		A board is created to represent the current state of the board that 
+		needs to be mimiced in the GUI. In the event of a backward move, 
+		that the the parent of the current node.'''
 		board = self.boardPane.curNode.board() if direction == 'forward' else self.boardPane.curNode.parent.board()
 		sqName = chess.square_name(square)
 		coords = self.coords(sqName)
@@ -69,9 +69,8 @@ class sqCanvas(Canvas):
 		i=self.create_image((coords[0], coords[1]), image=self.tkPieceImg[pieceName], anchor='nw', tag='piece')
 		self.pieceImgCache[sqName] = i
 
-
-	# create 64 rectangles to be sized and positioned later
 	def createSquares(self):
+		# create 64 rectangles to be sized and positioned later
 		file = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 		rank = ('8', '7', '6', '5', '4', '3', '2', '1')
 		sqColor = (self.settings['lightColorSq'], self.settings['darkColorSq'])
@@ -214,16 +213,15 @@ class sqCanvas(Canvas):
 		self.deletePieceImage(targetSq)
 		self.putImage(targetSq, direction)
 
-
 	def movePiece(self, move, direction):
 		ts,fs = move.to_square, move.from_square
 		sqs = (fs, ts) if direction == 'forward' else (ts, fs)
 		self.moveCanvasPiece(*sqs)
 
-	# position squares in canvas based on current square size
-	# can build board with either color on bottom depending on
-	# value of self.whiteSouth
 	def positionSquares(self):
+		'''position squares in canvas based on current square size
+		can build board with either color on bottom depending on
+		value of self.whiteSouth'''
 		sqSize = self.boardSize/8
 		sqIds = 0
 		# set variables based on what side is on bottom of board
@@ -241,38 +239,37 @@ class sqCanvas(Canvas):
 			ypos += direction
 			xpos = xreset
 
-	# when board is resized, resize the piece images so as not to lose resolution
 	def resizePieceImage(self, im):
+		'''when board is resized, resize the piece images so as not to lose resolution'''
 		dim = int(round(self.boardSize/8))
 		if int(dim)  <= 0: return
 		img = im.resize((int(dim), int(dim)), Image.LANCZOS)
 		return ImageTk.PhotoImage(image=img)
 
-
 	def resizePieceImages(self):
 		for name in self.boardPane.gui.pieceImg:
 			self.tkPieceImg[name] = self.resizePieceImage(self.boardPane.gui.pieceImg[name])
 
-	# toggles white on north or south side of the board
-	# bound to Reverse Button
 	def reverseBoard(self, e=None):
+		'''toggles white on north or south side of the board
+		bound to Reverse Button'''
 		self.whiteSouth = not self.whiteSouth
 		self.positionSquares()
 		self.printCurrentBoard()
 
-	# bound to change in board frame container size, redraw board based on width of container
 	def resizeBoard(self, e):
+		# bound to change in board frame container size, redraw board based on width of container
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
 		self.resizePieceImages()
 		self.printCurrentBoard()
 
-	'''
-	Move a piece from on sq to another
-	@ fromSq obj chess.square object with piece on it
-	@ toSq obj chess.square object to relocate piece
-	'''
 	def moveCanvasPiece(self, fromSq, toSq):
+		'''
+		Move a piece from on sq to another
+		@ fromSq obj chess.square object with piece on it
+		@ toSq obj chess.square object to relocate piece
+		'''
 		csn, cc, pic = chess.square_name, self.coords, self.pieceImgCache
 		fromSqName, toSqName = csn(fromSq), csn(toSq)
 		fromSqCoords, toSqCoords = cc(fromSqName), cc(toSqName)

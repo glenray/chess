@@ -1,6 +1,7 @@
 import tkinter as tk
 from blunderCheck import blunderCheck
 from analysis import infiniteAnalysis
+from gameScoreVisitor import gameScoreVisitor
 
 class Gamescore(tk.scrolledtext.ScrolledText):
 	def __init__(self, parent, boardPane):
@@ -63,14 +64,11 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			myNode = node
 		else:
 			myNode = node.variations[-1]
-
 		# new variation goes behind existing sub variations
 		if len(node.variations)>1:
 			myNode = myNode.end()
 			offset += 3
-
 		nodeIdx = self.boardPane.nodes.index(myNode)-1
-
 		begin, end = moveranges[(nodeIdx*2)], moveranges[(nodeIdx*2)+1]
 		commentLen = len(myNode.comment)
 		if commentLen>0:
@@ -85,41 +83,50 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.updateGameScore()
 		# otherwise, we need to add the variation
 		else:
-			# breakpoint()
 			insertPoint, curNodeIndex = self.getInsertPoint(self.boardPane.curNode)
-			board = self.boardPane.curNode.board()
 			self.boardPane.curNode = self.boardPane.curNode.add_variation(move)
-			moveTxt = f"{self.boardPane.curNode.san()}" 
-			moveNo = f"{board.fullmove_number}." if board.turn else f"{board.fullmove_number}..."
-			self.tag_remove('curMove', '0.0', 'end')
 			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
-			self.config(state='normal')
 			self.mark_set('varEnd', insertPoint)
-			if self.boardPane.curNode.starts_variation():
-				self.insert('varEnd', ' (')
-			self.insert('varEnd', f' {moveNo}')
-			self.insert('varEnd', moveTxt, ('move', 'curMove'))
-			if self.boardPane.curNode.starts_variation():
-				self.insert('varEnd', ')')
-			self.config(state='disabled')
+			self.outputMove(move, self.boardPane.curNode, 'varEnd')
 
-	def outputMove(self, board, move, currentNode, location='end'):
-		# breakpoint()
+	def outputMove(self, move, currentNode, location='end'):
+		# if location != 'end':
+		# 	breakpoint()
+		board = currentNode.parent.board()
 		moveNo = f"{board.fullmove_number}." if board.turn else ""
-		# black moves separated from its white counterpart by comment
-		# or variation will have move number and elipses pre-pended.
+		# prepend the move number and elipsis to black's move if:
+		# previous white move ends in a comment;
+		# previous white move had variations
+		# the current black move is the start of a new variation
 		isBlkTurn = board.turn == False
 		isMoveAfterComment = len(currentNode.parent.comment) > 0
-		isMoveAfterVar = ((currentNode.parent.parent != None)  
-			and (len(currentNode.parent.parent.variations)>1)
-			and (board.turn == False))
-		if isBlkTurn and (isMoveAfterComment or isMoveAfterVar):
+		# in PGN order, the node before this one ends a variation
+		isMoveAfterVar = self.boardPane.nodes[self.boardPane.nodes.index(currentNode)-1].is_end()
+		isStartVar = currentNode.starts_variation()
+		if isBlkTurn and (isMoveAfterComment or isMoveAfterVar or isStartVar):
 			moveNo = f"{board.fullmove_number}..."
 
+		self.config(state='normal')
+		self.tag_remove('curMove', '0.0', 'end')
+		if currentNode and currentNode.starts_variation():
+			self.insert(location, '(')
+		if currentNode.starting_comment:
+			c = f" {{{currentNode.starting_comment}}} ".replace('\n', ' ')
+			self.insert(location, c)
 		self.insert(location, f"{moveNo}")
 		# tag each move
-		self.insert(location, f"{board.san(move)}", ('move',), " ")
-
+		self.insert(location, f"{board.san(move)}", ('move', 'curMove'), " ")
+		if currentNode.comment:
+			c = f" {{{currentNode.comment}}} ".replace('\n', ' ')
+			self.insert(location, c)
+		# how do we know that currentNode's parent used to be at the end of this variation so as not to append a duplicate ')'?
+		if (currentNode and 
+			currentNode.starts_variation() and
+			# for now, we won't try to close variation when using gamescorevisitor
+			not location == 'end'
+			):
+			self.insert(location, ') ')
+		self.config(state='disabled')
 
 	def outputHeaders(self):
 		self.config(state='normal')

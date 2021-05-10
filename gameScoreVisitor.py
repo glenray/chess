@@ -7,8 +7,6 @@ including all variations and comments.
 '''
 class gameScoreVisitor(BaseVisitor):
 	def __init__(self, boardPane):
-		self.startsVariation = False
-		self.endsVariation = False
 		self.boardPane = boardPane
 		self.currentNode = self.boardPane.game
 		# at the start of a new variation, the current node is pushed
@@ -19,35 +17,21 @@ class gameScoreVisitor(BaseVisitor):
 
 	def end_headers(self):
 		self.boardPane.gameScore.outputHeaders()
-		
 
 	def visit_move(self, board, move):
-		if self.startsVariation:
-			self.startsVariation = False
-			# if board.turn == False:
-			# 	self.boardPane.gameScore.insert('end', f"{board.fullmove_number}...")
-			self.varStack.append(self.currentNode)
-			self.currentNode = self.currentNode.parent
-
-		if self.endsVariation:
-			self.endsVariation = False
-			self.currentNode = self.varStack.pop()
-
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
-		self.boardPane.gameScore.outputMove(board, move, self.currentNode)
+		self.boardPane.gameScore.outputMove(move, self.currentNode)
 
 	def begin_variation(self):
-		self.startsVariation=True
-		self.boardPane.gameScore.insert("end", "(")
+		self.varStack.append(self.currentNode)
+		self.currentNode = self.currentNode.parent
 
 	def end_variation(self):
-		self.endsVariation=True
-		self.boardPane.gameScore.insert("end", ") ")
-
-	def visit_comment(self, comment):
-		c = f" {{{comment}}} ".replace('\n', ' ')
-		self.boardPane.gameScore.insert('end', c)
+		self.boardPane.gameScore.config(state='normal')
+		self.boardPane.gameScore.insert('end', ') ')
+		self.boardPane.gameScore.config(state='disabled')
+		self.currentNode = self.varStack.pop()
 
 	def result(self):
 		self.boardPane.gameScore.config(state='disabled')

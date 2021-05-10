@@ -77,6 +77,7 @@ class boardPane(tk.PanedWindow):
 		self.bind("<Control-o>", self.loadGameFile)
 		self.bind("<Control-w>", self.removeTab)
 		self.bind("<Control-s>", lambda e: self.savePGN(self.game, self.nodes))
+		self.bind("<F12>", self.redrawGS)
 		self.boardFrame.bind("<Configure>", self.canvas.resizeBoard)
 		# Insert pane into the parent notebook
 		self.gui.notebook.insert('end', self, text="1 Board")
@@ -136,6 +137,11 @@ class boardPane(tk.PanedWindow):
 		print(game, file=file, end="\n\n")
 		print(nodes, file=file)
 		file.close()
+
+	def redrawGS(self, e):
+		self.game.accept(gameScoreVisitor(self))
+		self.canvas.printCurrentBoard()
+		self.variations.printVariations()
 
 def main():
 	from gui import GUI
