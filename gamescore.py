@@ -86,8 +86,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			insertPoint, curNodeIndex = self.getInsertPoint(self.boardPane.curNode)
 			self.boardPane.curNode = self.boardPane.curNode.add_variation(move)
 			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
-			self.mark_set('varEnd', insertPoint)
-			
+			self.mark_set('varEnd', f'{insertPoint}+1 chars')		
 			self.outputMove(move, self.boardPane.curNode, 'varEnd')
 
 	def outputMove(self, move, currentNode, location='end'):

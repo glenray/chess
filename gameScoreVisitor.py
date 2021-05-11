@@ -27,10 +27,11 @@ class gameScoreVisitor(BaseVisitor):
 
 	def _getInsertPoint(self):
 		'''
-		moves inside variations need to go inside closing parens intead of at end
-		for each level of sub variation we offset 2 characters for the ' )' plus
-		one more char for the '\n' at the end of the line.
-		starting variation needs to be one level of depth
+		Moves in the mainline go at the end of the text widget.
+		But, moves inside variations go inside closing parens intead.
+		Each level of sub variation adds 2 characters [' )']
+		Plus one more char for the '\n' at the end of the line.
+		Moves that start a variation should be offset by one level up.
 		'''
 		varDepth = len(self.varStack)
 		insertPoint = f'end-{varDepth*2+1} chars' if varDepth>0 and not self.currentNode.starts_variation() else 'end'
