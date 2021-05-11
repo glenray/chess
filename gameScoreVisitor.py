@@ -40,7 +40,7 @@ class gameScoreVisitor(BaseVisitor):
 		self.currentNode = self.varStack.pop()
 
 	def result(self):
-		self.boardPane.gameScore.config(state='disabled')
+		self.boardPane.gameScore.tag_remove('curMove', '0.0', 'end')
 		self.boardPane.curNode = self.boardPane.nodes[0]
 		nb = self.boardPane.gui.notebook
 		g=self.boardPane.game.headers
