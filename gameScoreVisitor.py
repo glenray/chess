@@ -27,6 +27,9 @@ class gameScoreVisitor(BaseVisitor):
 		# one more char for the '\n' at the end of the line.
 		varDepth = len(self.varStack)
 		self.insertPoint = f'end-{varDepth*2+1} chars' if varDepth>0 and not self.currentNode.starts_variation() else 'end'
+		# starting variation needs to be one level of depth
+		if varDepth>1 and self.currentNode.starts_variation():
+			self.insertPoint = f'end-{(varDepth-1)*2+1} chars'
 		self.boardPane.gameScore.outputMove(move, self.currentNode, self.insertPoint)
 
 	def begin_variation(self):

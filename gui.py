@@ -18,7 +18,7 @@ class GUI:
 		self.createWindow()
 		self.loadPieceImages()
 		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
-		self.addBoardPane('pgn/startComment.pgn')
+		self.addBoardPane('pgn/subvars.pgn')
 		# bring focus to the active notebook
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
