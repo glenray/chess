@@ -22,15 +22,21 @@ class gameScoreVisitor(BaseVisitor):
 	def visit_move(self, board, move):
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
-		# moves inside variations need to go inside closing parens intead of at end
-		# for each level of sub variation we offset 2 characters for the ' )' plus
-		# one more char for the '\n' at the end of the line.
+		insertPoint = self._getInsertPoint()
+		self.boardPane.gameScore.outputMove(move, self.currentNode, insertPoint)
+
+	def _getInsertPoint(self):
+		'''
+		moves inside variations need to go inside closing parens intead of at end
+		for each level of sub variation we offset 2 characters for the ' )' plus
+		one more char for the '\n' at the end of the line.
+		starting variation needs to be one level of depth
+		'''
 		varDepth = len(self.varStack)
-		self.insertPoint = f'end-{varDepth*2+1} chars' if varDepth>0 and not self.currentNode.starts_variation() else 'end'
-		# starting variation needs to be one level of depth
+		insertPoint = f'end-{varDepth*2+1} chars' if varDepth>0 and not self.currentNode.starts_variation() else 'end'
 		if varDepth>1 and self.currentNode.starts_variation():
-			self.insertPoint = f'end-{(varDepth-1)*2+1} chars'
-		self.boardPane.gameScore.outputMove(move, self.currentNode, self.insertPoint)
+			insertPoint = f'end-{(varDepth-1)*2+1} chars'
+		return insertPoint
 
 	def begin_variation(self):
 		self.varStack.append(self.currentNode)

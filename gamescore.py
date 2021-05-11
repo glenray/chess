@@ -107,7 +107,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 
 		self.config(state='normal')
 		self.tag_remove('curMove', '0.0', 'end')
-		if currentNode and currentNode.starts_variation():
+		if isStartVar:
 			self.insert(location, '(')
 		if currentNode.starting_comment:
 			c = f" {{{currentNode.starting_comment}}} ".replace('\n', ' ')
@@ -118,7 +118,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		if currentNode.comment:
 			c = f" {{{currentNode.comment}}} ".replace('\n', ' ')
 			self.insert(location, c)
-		if (currentNode and currentNode.starts_variation()):
+		if isStartVar:
 			self.insert(location, ') ')
 		self.config(state='disabled')
 
