@@ -12,6 +12,7 @@ class gameScoreVisitor(BaseVisitor):
 		# at the start of a new variation, the current node is pushed
 		# to the varStack and popped off when the new variation finishes.
 		self.varStack = []
+		self.insertPoint = 'end'
 		# the first node is the root, i.e. start position
 		self.boardPane.nodes = [self.currentNode]
 
@@ -21,16 +22,18 @@ class gameScoreVisitor(BaseVisitor):
 	def visit_move(self, board, move):
 		self.currentNode = self.currentNode.variation(move)
 		self.boardPane.nodes.append(self.currentNode)
-		self.boardPane.gameScore.outputMove(move, self.currentNode)
+		# moves inside variations need to go inside closing parens intead of at end
+		# for each level of sub variation we offset 2 characters for the ' )' plus
+		# one more char for the '\n' at the end of the line.
+		varDepth = len(self.varStack)
+		self.insertPoint = f'end-{varDepth*2+1} chars' if varDepth>0 and not self.currentNode.starts_variation() else 'end'
+		self.boardPane.gameScore.outputMove(move, self.currentNode, self.insertPoint)
 
 	def begin_variation(self):
 		self.varStack.append(self.currentNode)
 		self.currentNode = self.currentNode.parent
 
 	def end_variation(self):
-		self.boardPane.gameScore.config(state='normal')
-		self.boardPane.gameScore.insert('end', ') ')
-		self.boardPane.gameScore.config(state='disabled')
 		self.currentNode = self.varStack.pop()
 
 	def result(self):

@@ -87,6 +87,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.boardPane.curNode = self.boardPane.curNode.add_variation(move)
 			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
 			self.mark_set('varEnd', insertPoint)
+			
 			self.outputMove(move, self.boardPane.curNode, 'varEnd')
 
 	def outputMove(self, move, currentNode, location='end'):
@@ -117,12 +118,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		if currentNode.comment:
 			c = f" {{{currentNode.comment}}} ".replace('\n', ' ')
 			self.insert(location, c)
-		# how do we know that currentNode's parent used to be at the end of this variation so as not to append a duplicate ')'?
-		if (currentNode and 
-			currentNode.starts_variation() and
-			# TODO: for now, we won't try to close variation when gameScoreVisitor sets the location to end. gameScoreVisitor will add the closing ')'. Otherwise, the remaining moves in the variation will end up outside the parens.
-			not location == 'end'
-			):
+		if (currentNode and currentNode.starts_variation()):
 			self.insert(location, ') ')
 		self.config(state='disabled')
 
