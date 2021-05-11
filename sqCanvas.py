@@ -1,4 +1,5 @@
 from PIL import Image, ImageTk
+import time
 from tkinter import Canvas
 import chess
 
@@ -30,6 +31,7 @@ class sqCanvas(Canvas):
 		# y: the canvas square id of the to square where piece can go
 		# z: chess.move from x to y
 		self.MiP = []
+		self.resizeId = None
 		Canvas.__init__(self, parent)
 		self.whiteSouth = True	# True: white pieces on south side of board; False reverse
 		cWidth = int(self.boardPane.gui.screenW/2)
@@ -257,12 +259,21 @@ class sqCanvas(Canvas):
 		self.positionSquares()
 		self.printCurrentBoard()
 
-	def resizeBoard(self, e):
-		# bound to change in board frame container size, redraw board based on width of container
-		self.boardSize = min(e.height, e.width)
-		self.positionSquares()
+	def reGenPieces(self):
+		print(self.resizeId)
 		self.resizePieceImages()
 		self.printCurrentBoard()
+		self.resizeId = None
+
+	def resizeBoard(self, e):
+		# bound to change in board frame container size, redraw board based on width of container
+		if self.resizeId:
+			self.after_cancel(self.resizeId)
+			self.resizeId = None
+		self.delete('piece')
+		self.boardSize = min(e.height, e.width)
+		self.positionSquares()
+		self.resizeId = self.after(200, self.reGenPieces)
 
 	def moveCanvasPiece(self, fromSq, toSq):
 		'''
