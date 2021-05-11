@@ -260,16 +260,16 @@ class sqCanvas(Canvas):
 		self.printCurrentBoard()
 
 	def reGenPieces(self):
-		print(self.resizeId)
 		self.resizePieceImages()
 		self.printCurrentBoard()
 		self.resizeId = None
 
 	def resizeBoard(self, e):
-		# bound to change in board frame container size, redraw board based on width of container
+		'''
+		bound to change in board frame container size, redraw board based on width of container
+		'''
 		if self.resizeId:
 			self.after_cancel(self.resizeId)
-			self.resizeId = None
 		self.delete('piece')
 		self.boardSize = min(e.height, e.width)
 		self.positionSquares()
