@@ -69,6 +69,7 @@ class boardPane(tk.PanedWindow):
 		# Events 
 		self.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.bind('<Left>', lambda e: self.move(e, 'backward'))
+		self.bind('<Alt-Left>', self.jumpToVarStart)
 		self.bind('<Control-r>', self.canvas.reverseBoard)
 		self.bind('<Control-e>', self.toggleEngine)
 		self.bind('<Control-b>', lambda e: blunderCheck(self))
@@ -91,6 +92,24 @@ class boardPane(tk.PanedWindow):
 		# Add frames to paned window
 		self.add(self.boardFrame, stretch='always')
 		self.add(self.controlFrame, stretch='always')
+
+	def jumpToVarStart(self, e):
+		'''
+		Jump to the parent node of the start of this variation or to the
+		starting poisition is already in the main line.
+		'''
+		node, foundVar = self.curNode, False
+		while node.parent:
+			if node.starts_variation():
+				foundVar = True
+				break
+			node = node.parent
+		self.curNode = node.parent if foundVar else self.nodes[0]
+		self.canvas.printCurrentBoard()
+		self.variations.printVariations()
+		self.gameScore.updateGameScore()
+		if self.activeEngine != None:
+			infiniteAnalysis(self)
 
 	def removeTab(self, e):
 		'''Ctrl-w removes the tab; sets focuses on new current tab'''

@@ -92,7 +92,7 @@ class sqCanvas(Canvas):
 		sqId = self.find_closest(e.x, e.y, 0, 'piece')[0]
 		# The 2nd tag of a square is always its name, i.e. 'e4'
 		sqName = self.gettags(sqId)[1]
-		# if is the second touch
+		# A move is already in progress, so this is the second touch
 		if self.MiP:
 			# is this the same square clicked the last time?
 			# if so, we'll unhighlight everything and return
