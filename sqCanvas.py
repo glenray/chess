@@ -1,5 +1,4 @@
 from PIL import Image, ImageTk
-import time
 from tkinter import Canvas
 import chess
 
