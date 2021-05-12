@@ -69,7 +69,7 @@ class boardPane(tk.PanedWindow):
 		# Events 
 		self.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.bind('<Left>', lambda e: self.move(e, 'backward'))
-		self.bind('<Alt-Left>', self.jumpToVarStart)
+		self.bind('<Alt-Left>', self.jumpTo)
 		self.bind('<Control-r>', self.canvas.reverseBoard)
 		self.bind('<Control-e>', self.toggleEngine)
 		self.bind('<Control-b>', lambda e: blunderCheck(self))
@@ -79,6 +79,8 @@ class boardPane(tk.PanedWindow):
 		self.bind("<Control-w>", self.removeTab)
 		self.bind("<Control-s>", lambda e: self.savePGN(self.game, self.nodes))
 		self.bind("<F12>", self.redrawGS)
+		self.bind("<F11>", self.eraseGS)
+
 		self.boardFrame.bind("<Configure>", self.canvas.resizeBoard)
 		# Insert pane into the parent notebook
 		self.gui.notebook.insert('end', self, text="1 Board")
@@ -93,7 +95,7 @@ class boardPane(tk.PanedWindow):
 		self.add(self.boardFrame, stretch='always')
 		self.add(self.controlFrame, stretch='always')
 
-	def jumpToVarStart(self, e):
+	def jumpTo(self, e):
 		'''
 		Jump to the parent node of the start of this variation or to the
 		starting poisition is already in the main line.
@@ -105,6 +107,16 @@ class boardPane(tk.PanedWindow):
 				break
 			node = node.parent
 		self.curNode = node.parent if foundVar else self.nodes[0]
+		self._updatePane()
+
+	def eraseGS(self, e):
+		self.gameScore.config(state='normal')
+		self.gameScore.delete('1.0', 'end')
+
+	def _updatePane(self):
+		'''
+		Helper function to use after curNode has been updated.
+		'''
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()
 		self.gameScore.updateGameScore()
@@ -157,7 +169,7 @@ class boardPane(tk.PanedWindow):
 		print(nodes, file=file)
 		file.close()
 
-	def redrawGS(self, e):
+	def redrawGS(self, e=None):
 		self.game.accept(gameScoreVisitor(self))
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()

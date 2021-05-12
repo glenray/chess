@@ -253,16 +253,12 @@ class blunderCheck():
 			self.blText.see('end')
 
 			saveInfo = info
-		# after breaking out of loop, 
-		self.updateGUI(node.game())
 
-	# after blundercheck completes, update gui before exit
-	def updateGUI(self, game):
-		# populating the text widget is wicked slow if it's visible
-		self.boardPane.gameScore.pack_forget()
-		self.boardPane.canvas.printCurrentBoard()
-		self.boardPane.game = game
-		self.boardPane.game.accept(gameScoreVisitor(self.boardPane))
-		self.boardPane.gameScore.pack(anchor='n', expand=True, fill='both')
-		self.boardPane.variations.printVariations()
 		self.blWindow.destroy()
+		self.boardPane.game = game
+		self.boardPane.activeBlunderCheck = False
+		# redraw is very slow when done with this thread running
+		# so we pass that job back to mainloop with after, allowing
+		# this thread to terminate
+		# self.boardPane.redrawGS()  <-- very slow redraw
+		self.boardPane.after(0, self.boardPane.redrawGS)

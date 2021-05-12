@@ -114,7 +114,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		self.insert(location, f"{moveNo}")
 		# tag each move; the empty taglist for the space assures that 
 		# it does not get a move tag regardless of whether characters on both sides
-		# have that tag.
+		# have that tag, thereby assuring that moves remain separated.
 		self.insert(location, f"{board.san(move)}", ('move', 'curMove'), " ", ())
 		if currentNode.comment:
 			c = f" {{{currentNode.comment}}} ".replace('\n', ' ')
