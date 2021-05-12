@@ -69,7 +69,11 @@ class boardPane(tk.PanedWindow):
 		# Events 
 		self.bind('<Right>', lambda e: self.move(e, 'forward'))
 		self.bind('<Left>', lambda e: self.move(e, 'backward'))
-		self.bind('<Alt-Left>', self.jumpTo)
+		self.bind('<Alt-Left>', lambda e: self.jumpTo(e, 'upVar'))
+		self.bind('<Home>', lambda e: self.jumpTo(e, 'home'))
+		self.bind('<End>', lambda e: self.jumpTo(e, 'endVar'))
+		self.bind('<Next>', lambda e: self.jumpTo(e, 'pgDown'))
+		self.bind('<Prior>', lambda e: self.jumpTo(e, 'pgUp'))
 		self.bind('<Control-r>', self.canvas.reverseBoard)
 		self.bind('<Control-e>', self.toggleEngine)
 		self.bind('<Control-b>', lambda e: blunderCheck(self))
@@ -95,18 +99,42 @@ class boardPane(tk.PanedWindow):
 		self.add(self.boardFrame, stretch='always')
 		self.add(self.controlFrame, stretch='always')
 
-	def jumpTo(self, e):
+	def jumpTo(self, e, location):
 		'''
-		Jump to the parent node of the start of this variation or to the
-		starting poisition is already in the main line.
+		Jump to various nodes in the game
 		'''
-		node, foundVar = self.curNode, False
-		while node.parent:
-			if node.starts_variation():
-				foundVar = True
-				break
-			node = node.parent
-		self.curNode = node.parent if foundVar else self.nodes[0]
+		'''jump to the parent node of the start of this variation or to the
+		starting poisition is already in the main line.'''
+		if location == 'upVar':
+			node, foundVar = self.curNode, False
+			while node.parent:
+				if node.starts_variation():
+					foundVar = True
+					break
+				node = node.parent
+			self.curNode = node.parent if foundVar else self.nodes[0]
+		# jump to the opening position
+		elif location == 'home':
+			self.curNode = self.nodes[0]
+			self.gameScore.see('1.0')
+		# jump to the end of the current variation
+		elif location == 'endVar':
+			self.curNode = self.curNode.end()
+		# jump down 5 moves
+		elif location == 'pgDown':
+			for x in range(10):
+				if self.curNode.next():
+					self.curNode = self.curNode.next()
+				else:
+					break
+		elif location == 'pgUp':
+			for x in range(10):
+				if self.curNode.parent:
+					self.curNode = self.curNode.parent
+				else:
+					break
+		else:
+			return False
 		self._updatePane()
 
 	def eraseGS(self, e):
