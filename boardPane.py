@@ -103,16 +103,15 @@ class boardPane(tk.PanedWindow):
 		'''
 		Jump to various nodes in the game
 		'''
-		'''jump to the parent node of the start of this variation or to the
-		starting poisition is already in the main line.'''
+		'''jump to the parent node of the start of this variation 
+		if not in the mainline'''
 		if location == 'upVar':
-			node, foundVar = self.curNode, False
+			node = self.curNode
 			while node.parent:
 				if node.starts_variation():
-					foundVar = True
+					self.curNode = node.parent
 					break
 				node = node.parent
-			self.curNode = node.parent if foundVar else self.nodes[0]
 		# jump to the opening position
 		elif location == 'home':
 			self.curNode = self.nodes[0]
