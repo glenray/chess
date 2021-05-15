@@ -27,6 +27,10 @@ class blunderCheck():
 			'begMove'	: '1',
 			'endMove'	: ''
 		}
+		self.labelFont = font.Font(family="Tahoma", size=16)
+		self.buttonFont = font.Font(family="Tahoma", size=12)
+		self.textFont = font.Font(family="Courier", size=14)
+		self.buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":self.buttonFont}
 		self.blunderWin()
 
 	def analyzePosition(self, board, limit):
@@ -35,13 +39,13 @@ class blunderCheck():
 		engine.quit()
 		return info
 
-	# define and activate blunder check window
-	def blunderWin(self):
-		# Cancel button, Escape key, or x to close the window
-		def blunderOff(e=None):
-			self.boardPane.activeBlunderCheck = None
-			self.blWindow.destroy()
+	def blunderOff(self, e=None):
+		'''Cancel button, Escape key, or x to close the window'''
+		self.boardPane.activeBlunderCheck = None
+		self.blWindow.destroy()
 
+	def blunderWin(self):
+		'''define and activate blunder check window'''
 		# tk variables
 		# limit type from radio button, either depth or time
 		self.limitType=tk.StringVar()
@@ -50,36 +54,30 @@ class blunderCheck():
 		self.limitValue = tk.IntVar()
 		self.limitValue.set(10)
 
-		labelFont = font.Font(family="Tahoma", size=16)
-		buttonFont = font.Font(family="Tahoma", size=12)
-		textFont = font.Font(family="Courier", size=14)
-
-		buttonOptions = {"pady":5, "padx":5, "overrelief":'sunken', "font":buttonFont}
-
 		self.blWindow = tk.Toplevel(self.boardPane.gui.root)
 		# self.blWindow.attributes('-alpha', .9)
 		self.blWindow.title("Blunder Check")
-		self.blWindow.bind("<Escape>", blunderOff)
+		self.blWindow.bind("<Escape>", self.blunderOff)
 		self.blWindow.focus_force()
 		# exit gracefully when window is closed by clicking x
-		self.blWindow.protocol("WM_DELETE_WINDOW", blunderOff)
+		self.blWindow.protocol("WM_DELETE_WINDOW", self.blunderOff)
 		# make window modal
 		self.blWindow.grab_set()
 		# Window Title
-		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10, font=labelFont)
+		self.label = tk.Label(self.blWindow, text="Blunder Check", pady=10, font=self.labelFont)
 		self.label.grid(row=0, column=0, columnspan=2)
 		# Text widget
-		self.blText = tk.Text(self.blWindow, width=80, font=textFont, padx=10, pady=5)
+		self.blText = tk.Text(self.blWindow, width=80, font=self.textFont, padx=10, pady=5)
 		self.blText.grid(row=1, column=0, columnspan=2, sticky='nsew', padx=10)
 		# Buttons
 		self.buttonFrame = tk.Frame(self.blWindow)
 		self.buttonFrame.grid(row=2, column=0, sticky='nsew')
 		self.runButton = tk.Button(self.buttonFrame, text="Run", command=self.spawnBlunderCheck)
-		self.runButton.configure(buttonOptions)
+		self.runButton.configure(self.buttonOptions)
 		self.runButton.pack(side='left', padx=10)
 		self.runButton.focus()
-		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=blunderOff)
-		self.cancelButton.configure(buttonOptions)
+		self.cancelButton = tk.Button(self.buttonFrame, text="Cancel", command=self.blunderOff)
+		self.cancelButton.configure(self.buttonOptions)
 		self.cancelButton.pack(side='left', padx=10)
 		# End Buttons
 
