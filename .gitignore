@@ -2,3 +2,6 @@ stockfish.sublime*
 __pycache__
 *.pgn
 *.ipynb
+*.db*
+*.sql
+*.log
