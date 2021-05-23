@@ -1,7 +1,7 @@
 *.sublime*
-__pycache__
+*.sql
 *.pgn
 *.ipynb
-*.db*
-*.sql
-*.log
+__pycache__
+/databases
+/logs
