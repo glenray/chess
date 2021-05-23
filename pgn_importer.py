@@ -4,7 +4,17 @@ import io
 import logging
 import sqlite3
 from time import perf_counter
+
+from pgnPillagers.pillageTWIC import pillageTWIC
+from pgnPillagers.pgnPillager import pgnPillager
 import strings as sql
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+file_handler = logging.FileHandler('logs/import.log')	
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 class pgn_importer():
 	'''
@@ -14,20 +24,17 @@ class pgn_importer():
 	@ freshStart bool If true, all tables are dropped and the db is vacuumed
 	@ dbName str path to the sqlite database file
 	'''
-	def __init__(self, pgnFile, source, freshStart=False, dbName='chessLib.db'):
-		logging.basicConfig(filename='Error.log', level=logging.DEBUG)
-		logging.info("Application started.")
-		self.source = source
-		self.pgnFile = pgnFile
+	def __init__(self):
+		self.sources = {}	
+		self.headers = {}
+
+	def setup(self, dbName, freshStart=False):
 		self.conn = sqlite3.connect(dbName)
 		self.cursor = self.conn.cursor()
 		if freshStart:
 			self.cursor.executescript(sql.dropAllTables)
 		self.verifyDB()		#verify that the tables exist and create them of not
-		self.sources = {}	
-		self.headers = {}
-		self.zeroMoveGames = []
-		self.setListData()	#populate above dicts from DB data
+		self.setListData()	#self.sources and self.headers
 
 	def setListData(self):
 		'''
@@ -39,10 +46,6 @@ class pgn_importer():
 		sources = self.query(sql.getSources)
 		self.sources = {v:k for k, v in dict(sources).items()}
 		self.headers = {v:k for k, v in dict(headers).items()}
-		# prevent the same source from being used again.
-		assert not self.source in self.sources.keys(), f"{self.source} is already in the database."
-		idx = self.query(sql.insertSources, [self.source])
-		self.sources[self.source] = idx
 
 	def verifyDB(self):
 		'''Check if the db tables exist, if not, create them'''
@@ -50,47 +53,49 @@ class pgn_importer():
 		if self.cursor.fetchone()[0] == 0:
 			self.cursor.executescript(sql.createDB)
 
-	def testGameFile(self, encoding='latin-1'):
-		'''Iterate games in PGN file and break on errors'''
-		# pgn = self.pgnFile
-		pgn = io.StringIO(self.pgnFile.decode(encoding))
-		# pgn = open(self.pgnFile, encoding=encoding)
-		i, tStart = 1, perf_counter()
-		while True:
-			game = chess.pgn.read_game(pgn)
-			breakpoint()
-			print(game)
-			if not game: break
-			if game.errors:
-				breakpoint()
-			if i % 1000 == 0:
-				print(i)
-			i+=1
+	def verifySources(self):
+		# prevent the same source from being used again.
+		if self.source in self.sources.keys():
+			logger.info(f"{self.source} is already in the database. Skipping this file.")
+			return False
+		else:
+			idx = self.query(sql.insertSources, [self.source])
+			self.sources[self.source] = idx
+			return True
 
-	def iterateGameFile(self, encoding='latin-1'):
-		'''Iterate games in PGN file and insert to database'''
-		pgn, i, tStart = open(self.pgnFile, encoding=encoding), 1, perf_counter()
+	def iterateGameFile(self, pgnFile, source, encoding='latin-1'):
+		'''
+		Iterate games in PGN file and insert to database
+		pgnFile: string (a file path) or bytes
+		'''
+		self.pgnFile = pgnFile
+		self.source = source
+		# If the source is already in the DB, skip this file.
+		if self.verifySources() == False:
+			return
+		logger.info(f"Starting import from {self.source}.")
+		# pgnFile can be either 1) a string signifying a file path, or 2) a byte object signifying a file that needs to be turned into a string and io object.
+		if type(pgnFile) is bytes:
+			pgn = io.StringIO(self.pgnFile.decode(encoding))
+		elif type(pgnFile) is str:
+			pgn = open(pgnFile, encoding=encoding)
+		i = 0
 		while True:
-			# commit every 1000 games to save time
-			if i % 1000 == 0: 
+			if i % 200 == 0:
+				print(f'{self.source}: {i} committed')
 				self.conn.commit()
-				message = f'{i} games added in {perf_counter()-tStart} seconds'
-				print(message)
-				tStart = perf_counter()
 			game=chess.pgn.read_game(pgn)
-			if not game: break
-			# log errors and skip those games
+			if game == None: break
 			if game.errors:
-				logging.info(f"Skipping this game where errors were found.\n{str(game)}")
+				logger.error(f'Skipping game {i} due to errors.')
 				for error in game.errors:
-					logging.info(str(error)+'\n')
-				continue
-			self.insertGame(game)
+					logger.error(error)
+				logger.error(game)
+			else:
+				self.insertGame(game)
 			i+=1
-		# commit any remaining games.
 		self.conn.commit()
-		logging.info(f"These games have zero moves:")
-		logging.info(self.zeroMoveGames)
+		logger.info(f'Saved {i} games from {self.source}.')
 
 	def insertGame(self, game):
 		'''
@@ -98,10 +103,6 @@ class pgn_importer():
 		'''
 		data = [str(game)+'\n', self.sources[self.source]]
 		idx = self.query(sql.insertGame, data, False)
-		# log zero move games
-		if len(game.variations) == 0:
-			self.zeroMoveGames.append(idx)
-			logging.info(f'Game {idx} has zero moves.')
 		self.insertHeaders(game, idx)
 
 	def insertHeaders(self, game, gameIdx):
@@ -144,11 +145,42 @@ class pgn_importer():
 		elif firstWord == 'INSERT':
 			return self.cursor.lastrowid
 
+def updateTWIC():
+	obj = pgn_importer()
+	obj.setup('test.db', True)
+	a=pillageTWIC()
+	a.setTwicZipPaths()
+	newPaths = a.getNewPaths()
+	i=1
+	for newZip in newPaths:
+		if i == 5: break
+		zipfile = a.dlFile(a.twicZipPaths[newZip], a.reqHeaders)
+		unzipper = a.unzipFile(zipfile)
+		for name, pgn in unzipper:
+			obj.iterateGameFile(pgn, newZip)
+		i+=1
+
+def insertZip():
+	obj = pgn_importer()
+	obj.setup('databases/openings.db', True)
+	a = pgnPillager()
+	zipfile = open('C:/Users/Glen/OneDrive/Chess Game Downloads/openings.zip', 'rb')
+	zipfileData = zipfile.read()
+	zipfile.close()
+	unzipper = a.unzipFile(zipfileData)
+	for name, pgn in unzipper:
+		obj.iterateGameFile(pgn, f"openings - {name}")
+
 def main():
-	obj=pgn_importer('pgn/leftout.pgn', 'Rebel Millionbase', freshStart=True, dbName='test.db')
-	breakpoint()
-	# obj.iterateGameFile()
-	# obj.testGameFile()
+	insertZip()
+	# obj = pgn_importer()
+	# obj.setup('test.db', True)
+	# obj.iterateGameFile('pgn/Annotated_Games.pgn', 'Annotated_Games.pgn')
+	# obj.iterateGameFile('pgn/Adams.pgn', 'Adams.pgn')
+	# obj.iterateGameFile('pgn/Kasparovs_Games.pgn', 'Kasparovs_Games.pgn')
+	# obj.iterateGameFile('pgn/errors.pgn', 'errors.pgn')
+	# obj.iterateGameFile('pgn/fenfile.pgn', 'fenfile.pgn')
+
 
 if __name__ == '__main__':
 	main()

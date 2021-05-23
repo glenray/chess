@@ -1,4 +1,4 @@
-stockfish.sublime*
+*.sublime*
 __pycache__
 *.pgn
 *.ipynb

@@ -1,4 +1,4 @@
-from pgnPillager import pgnPillager
+from pgnPillagers.pgnPillager import pgnPillager
 from urllib.parse import urlparse
 from pathlib import Path
 import strings as sql
@@ -15,12 +15,9 @@ class pillageTWIC(pgnPillager):
 			'user-agent': 'Mozilla/5.0(Windows NT 10.0;Win64;x64;rv:81.0)Gecko/20100101 Firefox/81.0'
 		}
 		self.twicZipPaths = {}	# Dict of available pgn zip files at TWIC
-		self.dbTwicSources = []
+		self.dbTwicSources = [] # List of souces already in DB
 
 	def main(self):
-		'''
-		firstVol: an option integer specifying the oldest volume to save
-		'''
 		zips = self.getZipPaths()
 		for zip in zips:
 			filename = Path(zip['href']).name
@@ -29,9 +26,6 @@ class pillageTWIC(pgnPillager):
 			if int(digits) > firstVol or firstVol == None:
 				file = self.dlFile(zip['href'], headers=self.reqHeaders)
 				self.unzipFile(file, 'TWIC/')
-
-	def setTwicSources(self):
-		pass
 
 	def getNewPaths(self):
 		newPaths = list(set(self.twicZipPaths.keys()) - set(self.dbTwicSources))
@@ -45,16 +39,17 @@ class pillageTWIC(pgnPillager):
 		'''
 		soup = self.getSoup("https://theweekinchess.com/twic", headers=self.reqHeaders)
 		zipAnchors = soup.find_all(href=self.re.compile('zips/.*g\\.zip'))
-		self.twicZipPaths= {Path(el['href']).name : el['href'] for el in zipAnchors}
+		self.twicZipPaths = {Path(el['href']).name : el['href'] for el in zipAnchors}
 
 if __name__ == '__main__':
-	from pgn_importer import pgn_importer
-	a=pillageTWIC()
-	a.setTwicZipPaths()
-	a.getNewPaths()
-	zipfile = a.dlFile(a.twicZipPaths['twic920g.zip'], a.reqHeaders)
-	unzipper = a.unzipFile(zipfile)
-	for zipfile in unzipper:
-		breakpoint()
-		b=pgn_importer(zipfile, 'test', freshStart=True, dbName='temp')
-		b.testGameFile()
+	pass
+	# from pgn_importer import pgn_importer
+	# a=pillageTWIC()
+	# a.setTwicZipPaths()
+	# a.getNewPaths()
+	# zipfile = a.dlFile(a.twicZipPaths['twic920g.zip'], a.reqHeaders)
+	# unzipper = a.unzipFile(zipfile)
+	# for zipfile in unzipper:
+	# 	breakpoint()
+	# 	b=pgn_importer(zipfile, 'test', freshStart=True, dbName='temp')
+	# 	b.testGameFile()

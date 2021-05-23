@@ -5,6 +5,7 @@ from tkinter import filedialog
 from tkinter import font
 from tkinter import scrolledtext
 from boardPane import boardPane
+from dbPane import dbPane
 
 class GUI:
 	def __init__(self):
@@ -17,7 +18,8 @@ class GUI:
 		self.winDpiScaling()
 		self.createWindow()
 		self.loadPieceImages()
-		self.addBoardPane('pgn/carlsen.pgn')
+		# self.addBoardPane('pgn/carlsen.pgn')
+		self.addDBPane()
 		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
 		# self.addBoardPane('pgn/subvars.pgn')
 		# bring focus to the active notebook
@@ -43,6 +45,7 @@ class GUI:
 		# self.root.attributes('-fullscreen', True)
 		self.root.bind("<Escape>", lambda e: self.root.destroy())
 		self.root.bind("<Control-n>", self.openPGN)
+		self.root.bind("<F2>", self.addDBPane)
 		# takefocus=False prevents tab from taking the focus on tab traversal
 		self.notebook = ttk.Notebook(self.root, takefocus=False)
 		self.notebook.enable_traversal()
@@ -65,6 +68,9 @@ class GUI:
 
 	def addBoardPane(self, fileName=None):
 		boardPane(self, fileName)
+
+	def addDBPane(self, e=None):
+		dbPane(self)
 
 def main():
 	gui = GUI()

@@ -4,6 +4,14 @@ import os
 import re
 import requests
 import zipfile
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+file_handler = logging.FileHandler('logs/import.log')	
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 '''
 Base class providing tools to scrape web content
@@ -37,13 +45,13 @@ class pgnPillager:
 	def unzipFile(self, file : bytes):
 		'''
 		Generator unzips a zip file and yields each file one at a time
-		file: byte like object. This is not a string
+		file: byte object. This is not a string
 		'''
 		fileBytes = io.BytesIO(file)	# store content of zip file in memory
 		myzipFile = zipfile.ZipFile(fileBytes)	# zipfile object of download file
 		for name in myzipFile.namelist():	# iterate over the files in the zip
-			print(f"Uncompressing {name}")
-			yield myzipFile.read(name)	# unzip the file
+			logger.info(f"Uncompressing {name}")
+			yield name, myzipFile.read(name)	# unzip the file
 
 	def saveFile(self, file, filename, folder):
 		'''
