@@ -19,8 +19,8 @@ class GUI:
 		self.winDpiScaling()
 		self.createWindow()
 		self.loadPieceImages()
-		self.addBoardPane('pgn/carlsen.pgn')
 		self.addDBPane()
+		# self.addBoardPane('pgn/carlsen.pgn')
 		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
 		# self.addBoardPane('pgn/subvars.pgn')
 		# bring focus to the active notebook

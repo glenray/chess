@@ -43,23 +43,16 @@ class  dbResults(ttk.Treeview):
 		)
 
 	def setup(self):
-		self['columns'] = ("Id", "White", "Black", "Event", "Round", "Result")
-		self.column("#0", width=0, stretch='no')
-		self.column("Id", anchor='center', width=50, minwidth=25)
-		self.column("White", anchor='w', width=120, minwidth=25)
-		self.column("Black", anchor='w', width=120, minwidth=25)
-		self.column("Event", anchor='w', width=300, minwidth=25)
-		self.column("Round", anchor='w')
-		self.column("Result", anchor='w')
-
-		self.heading('#0', text='')
-		self.heading('Id', text='Id', anchor='center')
-		self.heading('White', text='White', anchor='w')
-		self.heading('Black', text='Black', anchor='w')
-		self.heading('Event', text='Event', anchor='w')
-		self.heading('Round', text='Round', anchor='w')
-		self.heading('Result', text='Round', anchor='w')
-
+		columns = ("Id", "Date", "White", "Black", "Event", "Round", "Result")
+		self.config(show='headings', columns=columns)
+		self.column("Id", anchor='center')
+		# set heading text
+		for col in self['columns']:
+			sort_method = lambda _col=col: self.treeview_sort_column(self, _col, False)
+			self.heading(col, text=col, anchor='w', command=sort_method)
+		# center the ID
+		self.heading('Id', anchor='center')
+		# bind double click to open game
 		self.bind('<Double-1>', self.loadGame)
 
 	def loadGame(self, e):
@@ -67,14 +60,16 @@ class  dbResults(ttk.Treeview):
 		game = self.games[item]
 		self.gui.gui.addBoardPane(game)
 
-	def getData(self, p1, p2):
+	def getResults(self, db, sql, data):
 		# reset games
 		self.games=[]
 		for row in self.get_children():
-		    self.delete(row)
-		dbh = DBHelper('databases/chessLib.db')
-		params = {'p1' : f'{p1}*', 'p2' : f'{p2}*'}
-		data = dbh.query(sql.getGamesBtwPlayers, params)
+			self.delete(row)
+		dbh = DBHelper(db)
+		data = dbh.query(sql, data)
+		self.populateTree(data)
+
+	def populateTree(self, data):
 		iid = 0
 		for row in data:
 			game = self.getGameFromStr(row['pgnString'])
@@ -86,6 +81,7 @@ class  dbResults(ttk.Treeview):
 				text = '',
 				values=(
 					row['gameId'],
+					headers['Date'],
 					headers['White'],
 					headers['Black'],
 					headers['Event'],
@@ -100,3 +96,18 @@ class  dbResults(ttk.Treeview):
 		pgn = io.StringIO(pgnString)
 		game = chess.pgn.read_game(pgn)
 		return game
+
+	def treeview_sort_column(self, tv, col, reverse):
+		'''
+		Sorting tree view table by click on heading from:
+		https://tekrecipes.com/2019/04/20/tkinter-treeview-enable-sorting-upon-clicking-column-headings/
+		'''
+		l = [(tv.set(k, col), k) for k in tv.get_children('')]
+		l.sort(reverse=reverse)
+
+		# rearrange items in sorted positions
+		for index, (val, k) in enumerate(l):
+			tv.move(k, '', index)
+
+		# reverse sort next time
+		tv.heading(col, command=lambda _col=col: self.treeview_sort_column(tv, _col, not reverse))

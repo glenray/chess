@@ -1,4 +1,5 @@
 import tkinter as tk
+import strings as queries
 
 class dbSearch(tk.Frame):
 	def __init__(self, parent, dbPane):
@@ -24,4 +25,6 @@ class dbSearch(tk.Frame):
 		self.searchBtn.grid(row=2, column=0, columnspan=2)
 
 	def execSearch(self):
-		self.dbPane.myresults.getData(self.p1_entry.get(), self.p2_entry.get())
+		data = {'p1' : f'{self.p1_entry.get()}*', 'p2' : f'{self.p2_entry.get()}*'}
+		sql = queries.getGamesBtwPlayers
+		self.dbPane.myresults.getResults('databases/chessLib.db', sql, data)

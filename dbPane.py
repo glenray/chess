@@ -13,7 +13,7 @@ class dbPane(tk.Frame):
 
 	def setup(self):
 		# Insert pane into the parent notebook
-		self.gui.notebook.add(self, text="1 DB")
+		self.gui.notebook.add(self, text="Database")
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 		self.searchFrame = tk.Frame(self, bg='red')
 		self.resultFrame = tk.Frame(self, bg='blue')
