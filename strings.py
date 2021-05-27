@@ -25,7 +25,10 @@ createDB = '''CREATE TABLE IF NOT EXISTS games (
 	CREATE INDEX relatedVal on related(value);
 '''
 
-getGamesBtwPlayers = '''SELECT count(game)
+getGamesBtwPlayers = '''SELECT 
+	games.rowid as gameId,
+	games.game as pgnString,
+	lists.value as source
 FROM games
 JOIN lists ON lists.rowid = games.source 
 WHERE games.rowid
@@ -34,15 +37,15 @@ IN (
 	FROM related
 	join lists ON lists.rowid = related.listID
 	WHERE 
-		(related.value GLOB 'Fischer, R.*' and lists.value = 'Black') or
-		(related.value GLOB 'Fischer, R.*' and lists.value = 'White')
+		(related.value GLOB :p1 and lists.value = 'Black') or
+		(related.value GLOB :p1 and lists.value = 'White')
 INTERSECT
 	SELECT gameID
 	FROM related
 	join lists ON lists.rowid=related.listID
 	WHERE
-		(related.value GLOB 'Spassky, B.*' and lists.value = 'Black') or
-		(related.value GLOB 'Spassky, B.*' and lists.value = 'White')
+		(related.value GLOB :p2 and lists.value = 'Black') or
+		(related.value GLOB :p2 and lists.value = 'White')
 )'''
 
 dbExists = '''SELECT count(name) FROM sqlite_master WHERE type='table' '''

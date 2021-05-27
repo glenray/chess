@@ -4,6 +4,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog
 from tkinter import font
 from tkinter import scrolledtext
+
 from boardPane import boardPane
 from dbPane import dbPane
 
@@ -18,7 +19,7 @@ class GUI:
 		self.winDpiScaling()
 		self.createWindow()
 		self.loadPieceImages()
-		# self.addBoardPane('pgn/carlsen.pgn')
+		self.addBoardPane('pgn/carlsen.pgn')
 		self.addDBPane()
 		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
 		# self.addBoardPane('pgn/subvars.pgn')

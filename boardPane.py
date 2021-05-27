@@ -24,13 +24,17 @@ class boardPane(tk.PanedWindow):
 		# populated by gameScoreVisitor class
 		self.nodes = []
 		self.curNode = None
-		self.pgnFile = pgnFile
-		file = open(self.pgnFile)
-		self.game = chess.pgn.read_game(file)
 		# index of node.variations[index] selected in the variations popup
 		self.varIdx = None
 		# The randomly generated name of any active blundercheck thread
 		self.activeBlunderCheck = None
+		self.pgnFile = pgnFile
+		# breakpoint()
+		if type(self.pgnFile) is str:
+			file = open(self.pgnFile)
+			self.game = chess.pgn.read_game(file)
+		elif isinstance(self.pgnFile, chess.pgn.Game):
+			self.game = self.pgnFile
 		self.setup()
 
 	def setup(self):
