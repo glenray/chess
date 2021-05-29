@@ -15,13 +15,18 @@ class dbPane(tk.Frame):
 		# Insert pane into the parent notebook
 		self.gui.notebook.add(self, text="Database")
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
-		self.searchFrame = tk.Frame(self, bg='red')
-		self.resultFrame = tk.Frame(self, bg='blue')
-		self.myresults = dbResults(self.resultFrame, self)
+		# search frame which has its own entry and button widgets
+		self.searchFrame = tk.Frame(self)
 		self.mysearch = dbSearch(self.searchFrame, self)
-
 		self.searchFrame.pack(fill='both', expand=True)
-		self.resultFrame.pack(fill='both', expand=True)
-		# self.textWidget.pack(side='left', fill='x', expand=True)
-		self.myresults.pack(side='left', fill='both', expand=True)
 		self.mysearch.pack(side='left', fill='both', expand=True)
+		# result frame > result tree view and its scroll bar
+		self.resultFrame = tk.Frame(self, bg='blue')
+		self.resultSB = tk.Scrollbar(self.resultFrame)
+		self.resultTree = dbResults(self.resultFrame, self)
+		self.resultTree.config(yscrollcommand=self.resultSB.set)
+		self.resultSB.config(command=self.resultTree.yview)
+		self.resultSB.pack(side='right', fill='y')
+		self.resultFrame.pack(fill='both', expand=True)
+		self.resultTree.pack(side='left', fill='both', expand=True)
+		

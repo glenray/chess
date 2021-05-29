@@ -47,7 +47,7 @@ class  dbResults(ttk.Treeview):
 		self.config(show='headings', columns=columns)
 		self.column("Id", anchor='center')
 		# set heading text
-		for col in self['columns']:
+		for col in columns:
 			sort_method = lambda _col=col: self.treeview_sort_column(self, _col, False)
 			self.heading(col, text=col, anchor='w', command=sort_method)
 		# center the ID
