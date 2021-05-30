@@ -9,12 +9,21 @@ from dbHelper import DBHelper
 import strings as sql
 
 class  dbResults(ttk.Treeview):
-	def __init__(self, parent, gui):
+	def __init__(self, parent, dbPane):
 		ttk.Treeview.__init__(self, parent)
-		self.gui = gui
+		self.dbPane = dbPane
 		self.games = []
 		self.setStyle()
+		self.bind('<<TreeviewSelect>>', self.printHeadings)
 		self.setup()
+
+	def printHeadings(self, e):
+		m = self.dbPane.messages
+		m.delete("0.1", "end")
+		headers = self.games[int(self.selection()[0])].headers
+		for h in headers:
+			m.insert('end', f'{h}:\t\t{headers[h]}\n')
+		# breakpoint()
 
 	def setStyle(self):
 		'''
@@ -58,7 +67,7 @@ class  dbResults(ttk.Treeview):
 	def loadGame(self, e):
 		item = int(self.selection()[0])
 		game = self.games[item]
-		self.gui.gui.addBoardPane(game)
+		self.dbPane.gui.addBoardPane(game)
 
 	def getResults(self, db, sql, data):
 		# reset games

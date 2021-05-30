@@ -17,9 +17,11 @@ class dbPane(tk.Frame):
 		self.gui.notebook.select(self.gui.notebook.index('end')-1)
 		# search frame which has its own entry and button widgets
 		self.searchFrame = tk.Frame(self)
-		self.mysearch = dbSearch(self.searchFrame, self)
+		self.searchForm = dbSearch(self.searchFrame, self)
+		self.messages = tk.Text(self.searchFrame, bg='blue', fg='white', font=('Helvetica', 14), height=11)
 		self.searchFrame.pack(fill='both', expand=True)
-		self.mysearch.pack(side='left', fill='both', expand=True)
+		self.searchForm.pack(side='left', fill='both', expand=True)
+		self.messages.pack(side='left', fill='both', expand=True)
 		# result frame > result tree view and its scroll bar
 		self.resultFrame = tk.Frame(self, bg='blue')
 		self.resultSB = tk.Scrollbar(self.resultFrame)

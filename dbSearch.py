@@ -2,15 +2,15 @@ import tkinter as tk
 from formRecipies import recipies
 
 class dbSearch(tk.Frame):
+	'''
+	The search box
+	'''
 	def __init__(self, parent, dbPane):
 		tk.Frame.__init__(self, parent)
 		self.dbPane = dbPane
 		self.config(borderwidth=5, relief='raised', padx=10, pady=10)
-		self.setup()
-
-	def setup(self):
-		self.formFactory(recipies['getPlayerGames'])
-		# self.formFactory(recipies['getGamesBtwPlayers'])
+		# self.formFactory(recipies['getPlayerGames'])
+		self.formFactory(recipies['getGamesBtwPlayers'])
 
 	def execSearch(self):
 		data, i = {}, 0
