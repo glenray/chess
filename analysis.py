@@ -47,7 +47,13 @@ class infiniteAnalysis:
 		with engine.analysis(board) as analysis:
 			for info in analysis:
 				# if this is no longer the active engine, kill this thread
-				if self.boardPane.activeEngine != tName:
+				try:
+					if self.boardPane.activeEngine != tName:
+						print(f"Engine {tName} Off.")
+						break
+				# if the boardPane was closed by the user
+				except:
+					print(f"Board closed while analysis active")
 					print(f"Engine {tName} Off.")
 					break
 
@@ -61,6 +67,12 @@ class infiniteAnalysis:
 						time = info.get('time'),
 						pvString = board.variation_san(pv)	
 					)
-					self.boardPane.analysis.delete('0.0', 'end')
-					self.boardPane.analysis.insert("0.1", output)
+					# if the board pane has been closed by the user, catch the exception and quit
+					try:
+						self.boardPane.analysis.delete('0.0', 'end')
+						self.boardPane.analysis.insert("0.1", output)
+					except:
+						print(f"Board closed while analysis active")
+						print(f"Engine {tName} Off.")
+						break
 		engine.quit()
