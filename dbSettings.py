@@ -1,3 +1,5 @@
+import chess
+import chess.pgn
 import os
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -28,3 +30,8 @@ class dbSettings(tk.Frame):
 		dbName = self.dbSelect.get(0)
 		self.dbPane.searchForm.database = f'databases/{dbName}'
 		self.dbSelect.pack()
+
+		self.openPGNBtn = tk.Button(self, text="Open PGN File", command=self.dbPane.resultTree.pgn2Tree)
+		self.openPGNBtn.pack()
+
+		

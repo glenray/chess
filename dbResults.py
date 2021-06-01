@@ -52,15 +52,12 @@ class  dbResults(ttk.Treeview):
 		)
 
 	def setup(self):
-		columns = ("Id", "Date", "White", "Black", "Event", "Round", "Result")
+		columns = ("Date", "White", "Black", "Event", "Round", "Result")
 		self.config(show='headings', columns=columns)
-		self.column("Id", anchor='center')
 		# set heading text
 		for col in columns:
 			sort_method = lambda _col=col: self.treeview_sort_column(self, _col, False)
 			self.heading(col, text=col, anchor='w', command=sort_method)
-		# center the ID
-		self.heading('Id', anchor='center')
 		# bind double click to open game
 		self.bind('<Double-1>', self.loadGame)
 
@@ -69,13 +66,15 @@ class  dbResults(ttk.Treeview):
 		game = self.games[item]
 		self.dbPane.gui.addBoardPane(game)
 
+	def resetTree(self):
+		self.games = []
+		for row in self.get_children():
+			self.delete(row)
+
 	def getResults(self, db, sql, data):
 		self.dbPane.messages.delete('1.0', 'end')
 		self.dbPane.messages.insert('end', 'Starting Search...')
-		# reset games
-		self.games=[]
-		for row in self.get_children():
-			self.delete(row)
+		self.resetTree()
 		threading.Thread(
 			target=self.spawnDBTask,
 			args = (db, sql, data),
@@ -87,18 +86,13 @@ class  dbResults(ttk.Treeview):
 		self.dbPane.messages.insert('end', f'Done! Found {len(returnedData)} games.')
 		self.after(0, self.populateTree, returnedData)
 
-	def populateTree(self, data):
-		iid = 0
-		for row in data:
-			game = self.getGameFromStr(row['pgnString'])
-			headers = dict(game.headers)
-			self.insert(
+	def insertTreeRow(self, headers, iid):
+		self.insert(
 				parent='',
 				index = 'end', 
 				iid=iid,
 				text = '',
 				values=(
-					row['gameId'],
 					headers['Date'],
 					headers['White'],
 					headers['Black'],
@@ -107,8 +101,27 @@ class  dbResults(ttk.Treeview):
 					headers['Result']
 				)
 			)
+
+	def populateTree(self, data):
+		iid = 0
+		for row in data:
+			game = self.getGameFromStr(row['pgnString'])
+			headers = dict(game.headers)
+			self.insertTreeRow(headers, iid)
 			iid+=1
 			self.games.append(game)
+
+	def pgn2Tree(self):
+		iid = 0
+		self.resetTree()
+		file = tk.filedialog.askopenfile(initialdir='pgn')
+		while True:
+			game = chess.pgn.read_game(file)
+			if game == None: break
+			headers = dict(game.headers)
+			self.insertTreeRow(headers, iid)
+			self.games.append(game)
+			iid+=1
 
 	def getGameFromStr(self, pgnString):
 		pgn = io.StringIO(pgnString)

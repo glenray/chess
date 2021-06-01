@@ -29,7 +29,6 @@ class boardPane(tk.PanedWindow):
 		# The randomly generated name of any active blundercheck thread
 		self.activeBlunderCheck = None
 		self.pgnFile = pgnFile
-		# breakpoint()
 		if type(self.pgnFile) is str:
 			file = open(self.pgnFile)
 			self.game = chess.pgn.read_game(file)
