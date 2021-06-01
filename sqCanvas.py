@@ -1,6 +1,7 @@
 from PIL import Image, ImageTk
 from tkinter import Canvas
 import chess
+from analysis import infiniteAnalysis
 
 class sqCanvas(Canvas):
 	'''
@@ -126,7 +127,7 @@ class sqCanvas(Canvas):
 		self.makeMoveOnCanvas(move, 'forward')	
 		self.boardPane.variations.printVariations()
 		if self.boardPane.activeEngine != None:
-			infiniteAnalysis(self)
+			infiniteAnalysis(self.boardPane)
 
 	def makeMoveOnCanvas(self, move, direction):
 		# Internally, this move has been made already, so we need to look at the parent

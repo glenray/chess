@@ -88,6 +88,8 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.boardPane.nodes.insert(curNodeIndex+2, self.boardPane.curNode)
 			self.mark_set('varEnd', f'{insertPoint}+1 chars')		
 			self.outputMove(move, self.boardPane.curNode, 'varEnd')
+			if self.boardPane.activeEngine != None:
+				infiniteAnalysis(self.boardPane)
 
 	def outputMove(self, move, currentNode, location='end'):
 		board = currentNode.parent.board()
