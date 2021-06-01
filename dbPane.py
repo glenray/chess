@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 
 from dbResults import dbResults
 from dbSearch import dbSearch
+from dbSettings import dbSettings
 import strings as sql
 
 class dbPane(tk.Frame):
@@ -19,6 +20,8 @@ class dbPane(tk.Frame):
 		self.searchFrame = tk.Frame(self)
 		self.searchForm = dbSearch(self.searchFrame, self)
 		self.messages = tk.Text(self.searchFrame, bg='blue', fg='white', font=('Helvetica', 14), height=11)
+		self.settings = dbSettings(self.searchFrame, self)
+		self.settings.pack(side='left', fill='both', expand=True)
 		self.searchFrame.pack(fill='both', expand=True)
 		self.searchForm.pack(side='left', fill='both', expand=True)
 		self.messages.pack(side='left', fill='both', expand=True)

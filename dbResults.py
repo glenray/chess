@@ -1,6 +1,7 @@
 import chess
 import chess.pgn
 import io
+import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -23,7 +24,6 @@ class  dbResults(ttk.Treeview):
 		headers = self.games[int(self.selection()[0])].headers
 		for h in headers:
 			m.insert('end', f'{h}:\t\t{headers[h]}\n')
-		# breakpoint()
 
 	def setStyle(self):
 		'''
@@ -70,13 +70,22 @@ class  dbResults(ttk.Treeview):
 		self.dbPane.gui.addBoardPane(game)
 
 	def getResults(self, db, sql, data):
+		self.dbPane.messages.delete('1.0', 'end')
+		self.dbPane.messages.insert('end', 'Starting Search...')
 		# reset games
 		self.games=[]
 		for row in self.get_children():
 			self.delete(row)
+		threading.Thread(
+			target=self.spawnDBTask,
+			args = (db, sql, data),
+			daemon= True).start()
+
+	def spawnDBTask(self, db, sql, data):
 		dbh = DBHelper(db)
-		data = dbh.query(sql, data)
-		self.populateTree(data)
+		returnedData = dbh.query(sql, data)
+		self.dbPane.messages.insert('end', f'Done! Found {len(returnedData)} games.')
+		self.after(0, self.populateTree, returnedData)
 
 	def populateTree(self, data):
 		iid = 0

@@ -11,6 +11,7 @@ class dbSearch(tk.Frame):
 		self.config(borderwidth=5, relief='raised', padx=10, pady=10)
 		# self.formFactory(recipies['getPlayerGames'])
 		self.formFactory(recipies['getGamesBtwPlayers'])
+		self.database = None
 
 	def execSearch(self):
 		data, i = {}, 0
@@ -18,7 +19,8 @@ class dbSearch(tk.Frame):
 			data[param] = f'{self.widgets[i]["widget"].get()}*'
 			i+=1
 		sql = self.formRecipe['sql']
-		self.dbPane.resultTree.getResults('databases/chessLib.db', sql, data)
+		self.dbPane.resultTree.getResults(self.database, sql, data)
+
 
 	def formFactory(self, formRecipe):
 		'''
