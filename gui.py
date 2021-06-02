@@ -20,9 +20,6 @@ class GUI:
 		self.createWindow()
 		self.loadPieceImages()
 		self.addDBPane()
-		# self.addBoardPane('pgn/carlsen.pgn')
-		# self.addBoardPane('pgn/blind-warrior vs AnwarQ.pgn')
-		# self.addBoardPane('pgn/subvars.pgn')
 		# bring focus to the active notebook
 		self.root.nametowidget(self.notebook.select()).focus()
 		self.root.mainloop()
@@ -40,7 +37,6 @@ class GUI:
 		self.root = tk.Tk()
 		self.screenW = self.root.winfo_screenwidth()
 		self.screenH = self.root.winfo_screenheight()
-		# self.root.geometry(f"{int(self.screenW)}x{int(self.screenH)}")
 		self.root.title("Glen's Chess Analysis Wizard")
 		self.root.state('zoomed')
 		# self.root.attributes('-fullscreen', True)
