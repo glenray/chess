@@ -137,19 +137,19 @@ class boardPane(tk.PanedWindow):
 					break
 		else:
 			return False
-		self._updatePane()
+		self._updatePane(location)
 
 	def eraseGS(self, e):
 		self.gameScore.config(state='normal')
 		self.gameScore.delete('1.0', 'end')
 
-	def _updatePane(self):
+	def _updatePane(self, location):
 		'''
 		Helper function to use after curNode has been updated.
 		'''
 		self.canvas.printCurrentBoard()
 		self.variations.printVariations()
-		self.gameScore.updateGameScore()
+		self.gameScore.updateGameScore(location)
 		if self.activeEngine != None:
 			infiniteAnalysis(self)
 
@@ -181,7 +181,7 @@ class boardPane(tk.PanedWindow):
 			self.canvas.makeMoveOnCanvas(self.curNode.move, direction)
 			self.curNode=self.curNode.parent
 
-		self.gameScore.updateGameScore()
+		self.gameScore.updateGameScore(direction=direction)
 		self.variations.printVariations()
 		if self.activeEngine != None:
 			infiniteAnalysis(self)

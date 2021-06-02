@@ -23,7 +23,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		elif status == 'enter':
 			self.config(cursor='hand2')
 
-	def updateGameScore(self):
+	def updateGameScore(self, direction=None):
 		# emphasize current move in game score
 		nodeIdx = self.boardPane.nodes.index(self.boardPane.curNode)
 		ranges = self.tag_ranges('move')
@@ -33,7 +33,13 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			self.tag_add('curMove', ranges[nodeIdx*2-2], ranges[nodeIdx*2-1])
 		# keep the current move visible in the game score
 		if self.tag_ranges('curMove'):
-			self.see('curMove.first')
+			if direction=='forward' or direction=='pgDown':
+				offset = '+200 chars'
+			elif direction=='backward' or direction=='pgUp':
+				offset = '-200 chars'
+			else:
+				offset = ''
+			self.see(f'curMove.first{offset}')
 
 	def gameScoreClick(self, e):
 		# click on move in gamescore updates board to that move
@@ -58,6 +64,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 			infiniteAnalysis(self.boardPane)
 
 	def getInsertPoint(self, node):
+		# bug: the offset works correctly as long as the move number is a single digit.
 		offset = 0
 		moveranges = self.tag_ranges('move')
 		if len(node.variations) == 0:
@@ -80,7 +87,7 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		# if the move is already a variation, update board as usual
 		if self.boardPane.curNode.has_variation(move):
 			self.boardPane.curNode = self.boardPane.curNode.variation(move)
-			self.updateGameScore()
+			self.updateGameScore(direction='forward')
 		# otherwise, we need to add the variation
 		else:
 			insertPoint, curNodeIndex = self.getInsertPoint(self.boardPane.curNode)
