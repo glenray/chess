@@ -114,13 +114,14 @@ class  dbResults(ttk.Treeview):
 	def pgn2Tree(self):
 		iid = 0
 		self.resetTree()
-		file = tk.filedialog.askopenfile(
+		filename = tk.filedialog.askopenfilename(
 			initialdir='pgn', 
 			filetypes=(('Portable Game Notation', '*.pgn'),),
 			title= 'Open PGN File'
 		)
-		# if file dialog cancelled, file is False (None), and will quit
-		while file:
+		# if file dialog cancelled, filename is '', and will quit
+		file = open(filename, encoding="Latin-1")
+		while filename:
 			game = chess.pgn.read_game(file)
 			if game == None: break
 			headers = dict(game.headers)

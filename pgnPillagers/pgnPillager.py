@@ -37,6 +37,7 @@ class pgnPillager:
 		returns a binary object which can be later:
 			transfomed to a string: obj.decode('utf-8')
 			used like a file: io.BytesIO(obj) or io.StringIO(obj)
+			saved to a file: self.saveFile()
 		'''
 		print(f"Downloading {url}")
 		req = requests.get(url, headers=headers)

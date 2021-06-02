@@ -34,9 +34,9 @@ class Gamescore(tk.scrolledtext.ScrolledText):
 		# keep the current move visible in the game score
 		if self.tag_ranges('curMove'):
 			if direction=='forward' or direction=='pgDown':
-				offset = '+200 chars'
+				offset = '+300 chars'
 			elif direction=='backward' or direction=='pgUp':
-				offset = '-200 chars'
+				offset = '-300 chars'
 			else:
 				offset = ''
 			self.see(f'curMove.first{offset}')
