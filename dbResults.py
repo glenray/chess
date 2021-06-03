@@ -19,6 +19,10 @@ class  dbResults(ttk.Treeview):
 		self.setup()
 
 	def printHeadings(self, e):
+		'''
+		When user selects a row in the treeview, display the game headers
+		in the messages widget.
+		'''
 		m = self.dbPane.messages
 		m.delete("0.1", "end")
 		headers = self.games[int(self.selection()[0])].headers
@@ -111,23 +115,33 @@ class  dbResults(ttk.Treeview):
 			iid+=1
 			self.games.append(game)
 
-	def pgn2Tree(self):
+	def pgn2Tree(self, filename):
+		'''
+		Insert games from pgn file into treeview
+		'''
+		messages = self.dbPane.messages
+		if filename:
+			messages.insert('end', 'Importing Now...')
+			# see https://www.tcl.tk/man/tcl8.7/TclCmd/update.htm
+			self.update_idletasks()
+		else:
+			messages.insert('end', "Error: no .pgn file selected.")
+			return
 		iid = 0
-		self.resetTree()
-		filename = tk.filedialog.askopenfilename(
-			initialdir='pgn', 
-			filetypes=(('Portable Game Notation', '*.pgn'),),
-			title= 'Open PGN File'
-		)
-		# if file dialog cancelled, filename is '', and will quit
 		file = open(filename, encoding="Latin-1")
-		while filename:
+		while True:
 			game = chess.pgn.read_game(file)
 			if game == None: break
 			headers = dict(game.headers)
 			self.insertTreeRow(headers, iid)
 			self.games.append(game)
 			iid+=1
+			if iid%100 == 0:
+				messages.insert('end', f"\nImported {iid} games.")
+				messages.see('end')
+				self.update_idletasks()
+		messages.insert('end', f"\n{iid+1} games displayed.")
+		messages.see('end')
 
 	def getGameFromStr(self, pgnString):
 		pgn = io.StringIO(pgnString)
