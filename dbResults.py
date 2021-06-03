@@ -132,6 +132,9 @@ class  dbResults(ttk.Treeview):
 		while True:
 			game = chess.pgn.read_game(file)
 			if game == None: break
+			if game.errors:
+				messages.insert('end', f'\n{game.errors}')
+				return
 			headers = dict(game.headers)
 			self.insertTreeRow(headers, iid)
 			self.games.append(game)

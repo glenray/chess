@@ -52,7 +52,10 @@ class dbSettings(tk.Frame):
 			ext = os.path.splitext(filename)[1]
 			if ext == '.db':
 				self.dbPane.searchForm.lift()
-			if ext == '.pgn':
-				self.dbPane.pgnHandler.lift()				
+			elif ext == '.pgn':
+				self.dbPane.pgnHandler.lift()
+			else:
+				self.dbPane.messages.insert('end', f'\nError: selected file must have .db or .pgn extension.')
+				return False
 			self.dbPane.dbResults.resetTree()
 			self.dbPane.messages.delete('1.0', 'end')
