@@ -50,7 +50,8 @@ class GUI:
 
 	def openPGN(self, e):
 		file = filedialog.askopenfilename()
-		self.addBoardPane(file)
+		if file:
+			self.addBoardPane(file)
 
 	def loadPieceImages(self):
 		'''

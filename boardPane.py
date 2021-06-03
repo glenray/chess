@@ -48,12 +48,17 @@ class boardPane(tk.PanedWindow):
 		self.variations.printVariations()
 
 	def loadGameFile(self, e):
-		self.pgnFile = filedialog.askopenfilename()
-		file = open(self.pgnFile)
-		self.game = chess.pgn.read_game(file)
-		self.game.accept(gameScoreVisitor(self))
-		self.canvas.printCurrentBoard()
-		self.variations.printVariations()
+		'''
+		Load new game into current board pane
+		'''
+		filename = filedialog.askopenfilename()
+		if filename:
+			self.pgnFile = filename
+			file = open(self.pgnFile)
+			self.game = chess.pgn.read_game(file)
+			self.game.accept(gameScoreVisitor(self))
+			self.canvas.printCurrentBoard()
+			self.variations.printVariations()
 
 	def createWidgets(self):
 		'''create all tkinter widgets and event bindings'''

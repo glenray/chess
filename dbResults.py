@@ -122,7 +122,8 @@ class  dbResults(ttk.Treeview):
 		messages = self.dbPane.messages
 		if filename:
 			messages.insert('end', 'Importing Now...')
-			# see https://www.tcl.tk/man/tcl8.7/TclCmd/update.htm
+			# regading update_idletasks, see 
+			# https://www.tcl.tk/man/tcl8.7/TclCmd/update.htm
 			self.update_idletasks()
 		else:
 			messages.insert('end', "Error: no .pgn file selected.")
