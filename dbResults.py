@@ -135,7 +135,7 @@ class  dbResults(ttk.Treeview):
 			if game == None: break
 			if game.errors:
 				messages.insert('end', f'\n{game.errors}')
-				return
+				# return
 			headers = dict(game.headers)
 			self.insertTreeRow(headers, iid)
 			self.games.append(game)
@@ -144,7 +144,7 @@ class  dbResults(ttk.Treeview):
 				messages.insert('end', f"\nImported {iid} games.")
 				messages.see('end')
 				self.update_idletasks()
-		messages.insert('end', f"\n{iid+1} games displayed.")
+		messages.insert('end', f"\n{iid} games displayed.")
 		messages.see('end')
 
 	def getGameFromStr(self, pgnString):
