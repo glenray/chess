@@ -13,7 +13,8 @@ class  dbResults(ttk.Treeview):
 	def __init__(self, parent, dbPane):
 		ttk.Treeview.__init__(self, parent)
 		self.dbPane = dbPane
-		self.games = []
+		self.games = None
+		self.offsets = None
 		self.setStyle()
 		self.bind('<<TreeviewSelect>>', self.printHeadings)
 		self.setup()
@@ -22,10 +23,22 @@ class  dbResults(ttk.Treeview):
 		'''
 		When user selects a row in the treeview, display the game headers
 		in the messages widget.
+
+		This is handled differently depending on whether the source of the games
+		is a database (self.games is populated) or a 
+		pgn file (self.offsets is populated)
 		'''
 		m = self.dbPane.messages
 		m.delete("0.1", "end")
-		headers = self.games[int(self.selection()[0])].headers
+		# headers from database
+		if self.games:
+			headers = self.games[int(self.selection()[0])].headers
+		# headers from pgn file
+		elif self.offsets:
+			offset = self.offsets[int(self.selection()[0])]
+			self.file.seek(offset)
+			game = chess.pgn.read_game(self.file)
+			headers = game.headers
 		for h in headers:
 			m.insert('end', f'{h}:\t\t{headers[h]}\n')
 
@@ -66,8 +79,18 @@ class  dbResults(ttk.Treeview):
 		self.bind('<Double-1>', self.loadGame)
 
 	def loadGame(self, e):
+		'''
+		Load the double clicked game from the tree view. This is handled
+		differently depending on whether the game is from a pgn file (self.offsets
+		is populated) or a database (self.games is populated)
+		'''
 		item = int(self.selection()[0])
-		game = self.games[item]
+		if self.offsets:
+			offset = self.offsets[item]
+			self.file.seek(offset)
+			game = chess.pgn.read_game(self.file)
+		elif self.games:
+			game = self.games[item]
 		self.dbPane.gui.addBoardPane(game)
 
 	def resetTree(self):
@@ -119,6 +142,7 @@ class  dbResults(ttk.Treeview):
 		'''
 		Insert games from pgn file into treeview
 		'''
+		self.offsets = [0]
 		messages = self.dbPane.messages
 		if filename:
 			messages.insert('end', 'Importing Now...')
@@ -129,16 +153,12 @@ class  dbResults(ttk.Treeview):
 			messages.insert('end', "Error: no .pgn file selected.")
 			return
 		iid = 0
-		file = open(filename, encoding="Latin-1")
+		self.file = open(filename, encoding="Latin-1")
 		while True:
-			game = chess.pgn.read_game(file)
-			if game == None: break
-			if game.errors:
-				messages.insert('end', f'\n{game.errors}')
-				# return
-			headers = dict(game.headers)
-			self.insertTreeRow(headers, iid)
-			self.games.append(game)
+			headers = chess.pgn.read_headers(self.file)
+			if headers == None: break
+			self.insertTreeRow(dict(headers), iid)
+			self.offsets.append(self.file.tell())
 			iid+=1
 			if iid%100 == 0:
 				messages.insert('end', f"\nImported {iid} games.")
